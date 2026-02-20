@@ -11,13 +11,13 @@ RUN apt-get update && apt-get install -y \
     make \
     unixodbc-dev \
     libltdl-dev \
-    wget \
-    gnupg \
+    curl \
+    gnupg2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Add Microsoft package repository and install ODBC Driver 18
-RUN wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | apt-key add - && \
-    echo "deb [arch=amd64,arm64,ppc64el] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" > /etc/apt/sources.list.d/mssql-release.list && \
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
     rm -rf /var/lib/apt/lists/*
