@@ -38,7 +38,7 @@ git push -u origin main
 5. 배포 설정:
    - **Name**: `mysecretary`
    - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
+   - **Build Command**: `bash build.sh`
    - **Start Command**: `gunicorn app:app`
    - **Region**: 선택 (예: Singapore)
 
