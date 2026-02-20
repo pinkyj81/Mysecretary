@@ -37,17 +37,17 @@ git push -u origin main
 4. Repository 선택: `MySecretary`
 5. 배포 설정:
    - **Name**: `mysecretary`
-   - **Environment**: `Python 3`
-   - **Build Command**: `bash build.sh`
-   - **Start Command**: `gunicorn app:app`
+   - **Environment**: `Docker` (⭐ 중요: Python 3 아님!)
+   - **Branch**: `main`
    - **Region**: 선택 (예: Singapore)
+   - **Root Directory**: `MySecretary` (선택사항)
 
 6. **Environment Variables** 설정:
    ```
    DB_SERVER = ms0501.gabiadb.com
    DB_NAME = yujincast
-   DB_USER = yujin
-   DB_PASSWORD = your_secure_password
+   DB_USER = (본인 DB 계정)
+   DB_PASSWORD = (본인 DB 암호)
    DB_DRIVER = ODBC Driver 18 for SQL Server
    FLASK_ENV = production
    ```
@@ -61,6 +61,20 @@ git push -u origin main
   - 데스크톱: `https://mysecretary.onrender.com/desktop`
   - 모바일: `https://mysecretary.onrender.com/mobile`
 
+## ✅ Dockerfile을 사용한 배포
+
+**Dockerfile 기반 배포의 장점:**
+- ✅ ODBC Driver 18 자동 설치
+- ✅ 모든 시스템 패키지 포함
+- ✅ 일관된 환경 보장
+- ✅ Linux 권한 문제 해결
+
+**배포 후 빌드 로그에서 확인사항:**
+```
+Successfully built [Docker image ID]
+Successfully tagged [image name]
+```
+
 ## 주의사항
 
 ⚠️ **보안**:
@@ -69,8 +83,9 @@ git push -u origin main
 - DB 비밀번호는 Render 환경 변수로만 관리하세요
 
 ⚠️ **ODBC 드라이버**:
-- Render 서버는 Linux 기반이므로, ODBC Driver 18 설치 필요
-- 배포 후 드라이버 설치 오류 발생 시 연락주세요
+- Render 서버는 Linux 기반이므로, `Dockerfile` 필수
+- `build.sh` 방식은 read-only 파일 시스템 오류 발생
+- Dockerfile 사용으로 빌드 단계에서 모든 패키지 설치
 
 ## 로컬 테스트
 
@@ -95,15 +110,23 @@ git push origin main
 
 ## 문제 해결
 
+### Read-only 파일 시스템 오류
+```
+E: List directory /var/lib/apt/lists/partial is missing
+```
+→ **해결**: `bash build.sh` 대신 `Docker` 환경 선택 및 Dockerfile 사용
+
 ### ODBC 드라이버 오류
 ```
 UnicodeDecodeError: 'utf-8' codec can't decode byte
 ```
-→ 이 경우 Render의 환경 설정에서 `ODBCINSTINI`, `ODBCSYSINI` 환경 변수 추가 필요
+→ Dockerfile이 올바르게 설치되었는지 확인
+→ DB 서버 접근 가능 여부 확인
 
 ### 데이터베이스 연결 불가
 - Render IP를 MSSQL 서버 방화벽에 허용 추가
-- DB 자격증명 확인
+- DB 자격증명 (DB_USER, DB_PASSWORD) 확인
+- DB_SERVER, DB_NAME 확인
 
 ---
 
