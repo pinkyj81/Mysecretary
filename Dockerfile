@@ -3,12 +3,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build dependencies for pyodbc with FreeTDS
+# Install build dependencies for pymssql
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     gcc \
     make \
-    unixodbc-dev \
     freetds-dev \
     && rm -rf /var/lib/apt/lists/*
 

@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 from flask_sqlalchemy import SQLAlchemy
 import os
 from dotenv import load_dotenv
@@ -12,8 +12,9 @@ DB_NAME = os.getenv('DB_NAME', 'yujincast')
 DB_USER = os.getenv('DB_USER', 'pinkyj81')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'zoskek38!!')
 
-# FreeTDS 드라이버 사용 (Render 환경 호환성)
-password_encoded = urllib.parse.quote_plus(DB_PASSWORD)
-SQLALCHEMY_DATABASE_URI = f"mssql+pyodbc://{DB_USER}:{password_encoded}@{DB_SERVER}/{DB_NAME}?driver=FreeTDS"
+# pymssql 드라이버 사용 (Render 환경 최적화)
+db_user = urllib.parse.quote_plus(DB_USER)
+db_password = urllib.parse.quote_plus(DB_PASSWORD)
+SQLALCHEMY_DATABASE_URI = f"mssql+pymssql://{db_user}:{db_password}@{DB_SERVER}/{DB_NAME}"
 
 db = SQLAlchemy()
