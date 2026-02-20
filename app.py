@@ -151,16 +151,39 @@ def recover_text(value: str | None) -> str:
         pass
 
     try:
+        candidates.append(value.encode('latin1').decode('cp949'))
+    except Exception:
+        pass
+
+    try:
+        candidates.append(value.encode('latin1').decode('euc-kr'))
+    except Exception:
+        pass
+
+    try:
         candidates.append(value.encode('cp1252').decode('utf-8'))
+    except Exception:
+        pass
+
+    try:
+        candidates.append(value.encode('cp1252').decode('cp949'))
+    except Exception:
+        pass
+
+    try:
+        candidates.append(value.encode('cp1252').decode('euc-kr'))
     except Exception:
         pass
 
     def score(text: str) -> int:
         hangul_count = sum(1 for ch in text if '가' <= ch <= '힣')
         mojibake_count = sum(1 for ch in text if ch in 'ÃÂÐÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝÞß')
-        return hangul_count * 3 - mojibake_count * 2
+        broken_kr_count = sum(1 for ch in text if ch in '¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞ')
+        replacement_count = text.count('�')
+        return hangul_count * 4 - mojibake_count * 2 - broken_kr_count - replacement_count * 3
 
-    return max(candidates, key=score)
+    best = max(candidates, key=score)
+    return best if score(best) > score(value) else value
 
 
 def schedule_to_payload(schedule: Schedule) -> dict:
@@ -265,12 +288,14 @@ def create_schedule():
         end_date = datetime.fromisoformat(data['end_date']) if data.get('end_date') else None
         
         schedule_type, clean_description = normalize_schedule_data(
-            data.get('description', ''),
+            recover_text(data.get('description', '')),
             data.get('schedule_type')
         )
 
+        input_title = recover_text(data.get('title', '')).strip()
+
         schedule = Schedule(
-            title=data['title'],
+            title=input_title,
             schedule_type=schedule_type,
             description=serialize_description(clean_description, schedule_type),
             color=normalize_schedule_color(data.get('color')),
@@ -294,11 +319,12 @@ def update_schedule(schedule_id):
     data = request.get_json() or {}
     
     try:
-        schedule.title = data.get('title', schedule.title)
+        if 'title' in data:
+            schedule.title = recover_text(data.get('title', schedule.title))
 
         current_type, current_description = normalize_schedule_data(schedule.description, schedule.schedule_type)
         if 'description' in data or 'schedule_type' in data:
-            input_description = data.get('description', current_description)
+            input_description = recover_text(data.get('description', current_description))
             input_type = data.get('schedule_type', current_type)
             next_type, next_description = normalize_schedule_data(input_description, input_type)
             schedule.schedule_type = next_type
@@ -679,7 +705,7 @@ def chat_api():
 
     try:
         start_date = parse_target_datetime(message)
-        title = extract_title(message)
+        title = recover_text(extract_title(message))
 
         schedule = Schedule(
             title=title,
