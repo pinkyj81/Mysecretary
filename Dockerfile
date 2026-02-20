@@ -3,12 +3,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install build dependencies for pyodbc (optional - will fail gracefully if ODBC unavailable)
+# Install build dependencies for pyodbc with FreeTDS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     gcc \
     make \
     unixodbc-dev \
+    freetds-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
