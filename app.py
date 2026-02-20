@@ -27,49 +27,65 @@ def ensure_schedule_schema() -> None:
         return
 
     inspector = inspect(db.engine)
-    if not inspector.has_table('secretary_schedule', schema='dbo') and not inspector.has_table('secretary_schedule'):
+
+    has_table = False
+    try:
+        has_table = inspector.has_table('secretary_schedule', schema='dbo')
+    except Exception:
+        has_table = False
+    if not has_table:
+        has_table = inspector.has_table('secretary_schedule')
+
+    if not has_table:
         _schema_checked = True
         return
 
     try:
-        columns = {column['name'].lower() for column in inspector.get_columns('secretary_schedule', schema='dbo')}
-    except Exception:
-        columns = {column['name'].lower() for column in inspector.get_columns('secretary_schedule')}
+        try:
+            columns = {column['name'].lower() for column in inspector.get_columns('secretary_schedule', schema='dbo')}
+            table_ref = 'dbo.secretary_schedule'
+        except Exception:
+            columns = {column['name'].lower() for column in inspector.get_columns('secretary_schedule')}
+            table_ref = 'secretary_schedule'
 
-    if 'type' not in columns:
-        db.session.execute(text("ALTER TABLE dbo.secretary_schedule ADD [type] NVARCHAR(20) NULL"))
+        if 'type' not in columns:
+            db.session.execute(text(f"ALTER TABLE {table_ref} ADD [type] NVARCHAR(20) NULL"))
 
-    if 'color' not in columns:
-        db.session.execute(text("ALTER TABLE dbo.secretary_schedule ADD [color] NVARCHAR(20) NULL"))
+        if 'color' not in columns:
+            db.session.execute(text(f"ALTER TABLE {table_ref} ADD [color] NVARCHAR(20) NULL"))
 
-    db.session.execute(text(
-        """
-        UPDATE dbo.secretary_schedule
-        SET [type] =
-            CASE
-                WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'TODO' THEN 'todo'
-                WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'DETAIL' THEN 'detail'
-                WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'PLAN' THEN 'schedule'
-                WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[todo]%' THEN 'todo'
-                WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[detail]%' THEN 'detail'
-                WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[plan]%' THEN 'schedule'
-                WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[schedule]%' THEN 'schedule'
-                ELSE 'schedule'
-            END
-        WHERE [type] IS NULL OR LTRIM(RTRIM([type])) = ''
-        """
-    ))
+        db.session.execute(text(
+            f"""
+            UPDATE {table_ref}
+            SET [type] =
+                CASE
+                    WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'TODO' THEN 'todo'
+                    WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'DETAIL' THEN 'detail'
+                    WHEN UPPER(LTRIM(RTRIM(ISNULL([description], '')))) = 'PLAN' THEN 'schedule'
+                    WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[todo]%' THEN 'todo'
+                    WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[detail]%' THEN 'detail'
+                    WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[plan]%' THEN 'schedule'
+                    WHEN LOWER(LTRIM(RTRIM(ISNULL([description], '')))) LIKE '[schedule]%' THEN 'schedule'
+                    ELSE 'schedule'
+                END
+            WHERE [type] IS NULL OR LTRIM(RTRIM([type])) = ''
+            """
+        ))
 
-    db.session.execute(text(
-        """
-        UPDATE dbo.secretary_schedule
-        SET [color] = :default_color
-        WHERE [color] IS NULL OR LTRIM(RTRIM([color])) = ''
-        """
-    ), {'default_color': DEFAULT_SCHEDULE_COLOR})
+        db.session.execute(text(
+            f"""
+            UPDATE {table_ref}
+            SET [color] = :default_color
+            WHERE [color] IS NULL OR LTRIM(RTRIM([color])) = ''
+            """
+        ), {'default_color': DEFAULT_SCHEDULE_COLOR})
 
-    db.session.commit()
-    _schema_checked = True
+        db.session.commit()
+        _schema_checked = True
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.exception('Schema sync skipped: %s', exc)
+        _schema_checked = True
 
 
 def normalize_schedule_data(raw_description: str | None, explicit_type: str | None = None) -> tuple[str, str]:
@@ -133,7 +149,10 @@ def schedule_to_payload(schedule: Schedule) -> dict:
 
 @app.before_request
 def ensure_schema_before_request():
-    ensure_schedule_schema()
+    try:
+        ensure_schedule_schema()
+    except Exception as exc:
+        app.logger.exception('Schema pre-check failed but request continues: %s', exc)
 
 # ======================= DESKTOP 라우트 =======================
 
