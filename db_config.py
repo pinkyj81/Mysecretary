@@ -15,6 +15,6 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', 'zoskek38!!')
 # pymssql 드라이버 사용 (Render 환경 최적화)
 db_user = urllib.parse.quote_plus(DB_USER)
 db_password = urllib.parse.quote_plus(DB_PASSWORD)
-SQLALCHEMY_DATABASE_URI = f"mssql+pymssql://{db_user}:{db_password}@{DB_SERVER}/{DB_NAME}"
+SQLALCHEMY_DATABASE_URI = f"mssql+pymssql://{db_user}:{db_password}@{DB_SERVER}/{DB_NAME}?charset=utf8"
 
 db = SQLAlchemy()

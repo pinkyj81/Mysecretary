@@ -139,11 +139,38 @@ def normalize_schedule_color(raw_color: str | None) -> str:
     return DEFAULT_SCHEDULE_COLOR
 
 
+def recover_text(value: str | None) -> str:
+    if not isinstance(value, str) or not value:
+        return value or ''
+
+    candidates = [value]
+
+    try:
+        candidates.append(value.encode('latin1').decode('utf-8'))
+    except Exception:
+        pass
+
+    try:
+        candidates.append(value.encode('cp1252').decode('utf-8'))
+    except Exception:
+        pass
+
+    def score(text: str) -> int:
+        hangul_count = sum(1 for ch in text if '가' <= ch <= '힣')
+        mojibake_count = sum(1 for ch in text if ch in 'ÃÂÐÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝÞß')
+        return hangul_count * 3 - mojibake_count * 2
+
+    return max(candidates, key=score)
+
+
 def schedule_to_payload(schedule: Schedule) -> dict:
     payload = schedule.to_dict()
-    schedule_type, clean_description = normalize_schedule_data(schedule.description, schedule.schedule_type)
+    recovered_title = recover_text(schedule.title)
+    recovered_description = recover_text(schedule.description)
+    schedule_type, clean_description = normalize_schedule_data(recovered_description, schedule.schedule_type)
+    payload['title'] = recovered_title
     payload['schedule_type'] = schedule_type
-    payload['description'] = clean_description
+    payload['description'] = recover_text(clean_description)
     return payload
 
 
@@ -350,7 +377,9 @@ def weekly_plan_api():
             continue
 
         day_key = day_keys[day_index]
-        schedule_type, _ = normalize_schedule_data(item.description, item.schedule_type)
+        item_title = recover_text(item.title)
+        item_description = recover_text(item.description)
+        schedule_type, _ = normalize_schedule_data(item_description, item.schedule_type)
 
         if schedule_type == 'title':
             title_start = item.start_date.date()
@@ -366,7 +395,7 @@ def weekly_plan_api():
                 current_key = day_keys[(current_date - week_start_date).days]
                 title_by_day[current_key].append({
                     'id': item.id,
-                    'title': item.title,
+                    'title': item_title,
                     'color': item.color,
                     'is_completed': bool(item.is_completed)
                 })
@@ -376,7 +405,7 @@ def weekly_plan_api():
             todo_by_day[day_key].append({
                 'id': item.id,
                 'time': None,
-                'title': item.title,
+                'title': item_title,
                 'is_completed': bool(item.is_completed)
             })
             continue
@@ -388,18 +417,18 @@ def weekly_plan_api():
         minute_text = f"{item.start_date.minute:02d}"
 
         if hour in grid:
-            label = item.title if item.start_date.minute == 0 else f"{hour}:{minute_text} {item.title}"
+            label = item_title if item.start_date.minute == 0 else f"{hour}:{minute_text} {item_title}"
             if item.start_date.minute == 0:
                 grid[hour][day_key].append({
                     'id': item.id,
-                    'title': item.title,
+                    'title': item_title,
                     'label': label,
                     'is_completed': bool(item.is_completed)
                 })
             else:
                 grid[hour][day_key].append({
                     'id': item.id,
-                    'title': item.title,
+                    'title': item_title,
                     'label': label,
                     'is_completed': bool(item.is_completed)
                 })
@@ -638,7 +667,7 @@ def chat_api():
         lines = ['요청하신 기간의 일정입니다:']
         for schedule in schedules:
             when = schedule.start_date.strftime('%m-%d %H:%M')
-            lines.append(f"- {when} {schedule.title}")
+            lines.append(f"- {when} {recover_text(schedule.title)}")
 
         return jsonify({'success': True, 'message': "\n".join(lines)})
 
