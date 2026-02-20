@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Secretary - 데스크톱</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .btn-mobile {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-mobile:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .controls {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: flex-end;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 9px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #5A9FD4;
+            box-shadow: 0 0 0 3px rgba(90, 159, 212, 0.1);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(90, 159, 212, 0.3);
+        }
+
+        /* Main Layout - 3 Column */
+        .main-layout {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+            overflow: hidden;
+            align-items: stretch;
+        }
+
+        .sidebar {
+            width: 25%;
+            background: #fafafa;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px;
+            flex-shrink: 0;
+            height: auto;
+            max-height: 350px;
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #5A9FD4;
+        }
+
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .schedule-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #5A9FD4;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .schedule-item:hover {
+            box-shadow: 0 2px 6px rgba(90, 159, 212, 0.2);
+            transform: translateX(4px);
+        }
+
+        .schedule-item.completed {
+            opacity: 0.6;
+        }
+
+        .schedule-item-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .schedule-item.completed .schedule-item-title {
+            text-decoration: line-through;
+        }
+
+        .schedule-item-date {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .calendar-section {
+            flex: 1;
+            padding: 20px 40px;
+            overflow-y: auto;
+            background: white;
+            align-self: flex-start;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 8px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .calendar-month-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-nav-btn {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            margin-bottom: 1px;
+            background: #e0e0e0;
+        }
+
+        .calendar-weekday {
+            background: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e0e0e0;
+        }
+
+        .calendar-day {
+            background: white;
+            min-height: 80px;
+            padding: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .calendar-day:hover {
+            background: #f9f9f9;
+        }
+
+        .calendar-day.other-month {
+            background: #fafafa;
+            color: #ccc;
+        }
+
+        .calendar-day.today {
+            background: #e8f3fa;
+            border: 2px solid #5A9FD4;
+        }
+
+        .day-number {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .calendar-day.other-month .day-number {
+            color: #ccc;
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: visible;
+        }
+
+        .day-event {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 10px;
+            line-height: 1.2;
+            min-height: 16px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .day-event.span-start {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            margin-right: -8px;
+            padding-right: 8px;
+        }
+
+        .day-event.span-mid {
+            border-radius: 0;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: center;
+            letter-spacing: 1px;
+            margin-left: -8px;
+            margin-right: -8px;
+        }
+
+        .day-event.span-end {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            text-align: center;
+            letter-spacing: 1px;
+            margin-left: -8px;
+            padding-left: 8px;
+        }
+
+        .day-event.completed {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .modal-title-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef4fb;
+            color: #2E5AA8;
+        }
+
+        .modal-title-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #5A9FD4;
+            box-shadow: 0 0 0 3px rgba(90, 159, 212, 0.1);
+        }
+
+        .form-group input[type="color"] {
+            padding: 0;
+            height: 42px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .modal-footer {
+            padding: 20px 25px 25px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(90, 159, 212, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+
+        @media (max-width: 1400px) {
+            .main-layout {
+                flex-direction: column-reverse;
+                overflow-y: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: none;
+                border-top: 1px solid #e0e0e0;
+                max-height: 300px;
+                order: -1;
+            }
+
+            .calendar-section {
+                width: 100%;
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column-reverse;
+                overflow-y: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-top: 1px solid #e0e0e0;
+                max-height: 250px;
+                order: -1;
+            }
+
+            .calendar-section {
+                padding: 15px 20px;
+                width: 100%;
+                order: 1;
+            }
+
+            .calendar-day {
+                min-height: 60px;
+                padding: 4px;
+                font-size: 11px;
+            }
+
+            .calendar-weekday {
+                padding: 8px;
+                font-size: 11px;
+            }
+        }
+
+        /* ======================= Chatbot Modal Styles ======================= */
+        .chatbot-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .chatbot-modal.show {
+            display: flex;
+        }
+
+        .chatbot-modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            height: 70vh;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .chatbot-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chatbot-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .chatbot-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-welcome {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .chat-msg {
+            display: flex;
+            margin-bottom: 12px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .chat-msg.user {
+            justify-content: flex-end;
+        }
+
+        .chat-msg.assistant {
+            justify-content: flex-start;
+        }
+
+        .chat-msg-content {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .chat-msg.user .chat-msg-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-msg.assistant .chat-msg-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-typing {
+            display: flex;
+            gap: 4px;
+            padding: 8px 14px;
+            background: white;
+            border-radius: 14px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-typing span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+
+        .chat-typing span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .chat-typing span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .chatbot-input-container {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chatbot-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chatbot-input:focus {
+            border-color: #667eea;
+        }
+
+        .chatbot-send-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .chatbot-send-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .chatbot-send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>✨ My Secretary</h1>
+                <p>데스크톱 화면</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('desktop_weekly_page') }}" class="btn-mobile">📅 주간 계획표</a>
+                <button onclick="openChatbotModal()" class="btn-mobile" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;">🤖 챗봇</button>
+                <a href="{{ url_for('mobile_index') }}" class="btn-mobile">📱 모바일 화면</a>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="openCreateModal()" class="btn-add">⊕ 새 일정</button>
+        </div>
+
+        <div class="main-layout">
+            <!-- Left Sidebar - Schedule List -->
+            <div class="sidebar">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 일정 검색...">
+                <div class="sidebar-title">📋 전체 일정</div>
+                <div class="schedule-list" id="scheduleListSidebar">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Main Calendar -->
+            <div class="calendar-section">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀ 이전</button>
+                        <h2 class="calendar-month-title" id="calendarTitle"></h2>
+                        <button class="calendar-nav-btn" onclick="changeMonth(1)">다음 ▶</button>
+                    </div>
+
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday">월</div>
+                        <div class="calendar-weekday">화</div>
+                        <div class="calendar-weekday">수</div>
+                        <div class="calendar-weekday">목</div>
+                        <div class="calendar-weekday">금</div>
+                        <div class="calendar-weekday">토</div>
+                        <div class="calendar-weekday">일</div>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <h3>📝 등록된 일정이 없습니다</h3>
+                    <p>첫 일정을 추가해 시작해 보세요!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">
+                    <span class="modal-title-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>
+                    </span>
+                    <span id="modalTitleText">일정 수정</span>
+                </h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <input type="hidden" id="scheduleId">
+                    
+                    <div class="form-group">
+                        <label for="scheduleTitle">일정 제목 *</label>
+                        <input type="text" id="scheduleTitle" placeholder="일정 제목 입력" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleDescription">설명</label>
+                        <textarea id="scheduleDescription" placeholder="세부 내용을 입력하세요 (선택)"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleType">구분</label>
+                        <select id="scheduleType">
+                            <option value="title">제목</option>
+                            <option value="todo">할 일</option>
+                            <option value="schedule">일정</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleColor">색상</label>
+                        <input type="color" id="scheduleColor" value="#5A9FD4">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleStartDate">시작 일시 *</label>
+                        <input type="datetime-local" id="scheduleStartDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleEndDate">종료 일시</label>
+                        <input type="datetime-local" id="scheduleEndDate">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="scheduleCompleted">
+                        <label for="scheduleCompleted">완료</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">취소</button>
+                <button type="button" class="btn btn-danger" id="btnDelete" onclick="deleteScheduleFromModal()" style="display: none;">🗑️ 삭제</button>
+                <button type="button" class="btn btn-primary" onclick="saveSchedule()">✓ 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Modal -->
+    <div id="chatbotModal" class="modal chatbot-modal">
+        <div class="chatbot-modal-content">
+            <div class="chatbot-modal-header">
+                <h2 style="font-size: 18px; font-weight: 600;">🤖 AI 일정 비서</h2>
+                <button class="chatbot-modal-close" onclick="closeChatbotModal()">✕</button>
+            </div>
+            <div class="chatbot-messages" id="chatMessagesContainer">
+                <div class="chat-welcome">
+                    <p><strong>안녕하세요! 😊</strong></p>
+                    <p style="font-size: 13px; color: #666; margin-top: 8px;">자연스러운 대화로 일정을 관리해보세요!</p>
+                    <div style="margin-top: 12px; font-size: 12px; color: #999;">
+                        <p>예: "내일 오후 3시 회의 추가해줘"</p>
+                        <p>예: "이번 주 일정 보여줘"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input-container">
+                <input 
+                    type="text" 
+                    id="chatInput" 
+                    class="chatbot-input" 
+                    placeholder="메시지를 입력하세요..."
+                    autocomplete="off"
+                >
+                <button id="chatSendBtn" class="chatbot-send-btn" onclick="sendChatMessage()">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allSchedules = [];
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+
+        const createTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
+        const editTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>';
+
+        function setModalTitle(mode) {
+            const isEdit = mode === 'edit';
+            const icon = isEdit ? editTitleIconSvg : createTitleIconSvg;
+            const text = isEdit ? '일정 수정' : '일정 생성';
+            document.getElementById('modalTitle').innerHTML = `<span class="modal-title-icon" aria-hidden="true">${icon}</span><span id="modalTitleText">${text}</span>`;
+        }
+
+        // Load schedules on page load
+        loadSchedules();
+
+        async function loadSchedules() {
+            try {
+                const response = await fetch('/desktop/schedule');
+                allSchedules = await response.json();
+                renderCalendar();
+                renderSidebar();
+            } catch (error) {
+                console.error('Error loading schedules:', error);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+            renderSidebar();
+        }
+
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const calendarTitle = document.getElementById('calendarTitle');
+            
+            calendarTitle.textContent = `${currentYear}년 ${currentMonth + 1}월`;
+
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDayOfWeek = (firstDay.getDay() - 1 + 7) % 7;
+            const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+
+            calendarGrid.innerHTML = '';
+
+            // Previous month days
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const day = prevMonthLastDay - i;
+                const prevDate = new Date(currentYear, currentMonth - 1, day);
+                const dayDiv = createDayCell(prevDate, true);
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            // Current month days
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(currentYear, currentMonth, day);
+                const isToday = currentDate.getFullYear() === today.getFullYear() &&
+                               currentDate.getMonth() === today.getMonth() &&
+                               currentDate.getDate() === today.getDate();
+                const dayDiv = createDayCell(currentDate, false, isToday);
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            // Next month days
+            const totalCells = calendarGrid.children.length;
+            const remainingCells = 42 - totalCells;
+            for (let day = 1; day <= remainingCells; day++) {
+                const nextDate = new Date(currentYear, currentMonth + 1, day);
+                const dayDiv = createDayCell(nextDate, true);
+                calendarGrid.appendChild(dayDiv);
+            }
+        }
+
+        function createDayCell(dateObj, isOtherMonth, isToday = false) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day';
+            if (isOtherMonth) dayDiv.classList.add('other-month');
+            if (isToday) dayDiv.classList.add('today');
+
+            const day = dateObj.getDate();
+            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            const isVisibleSchedule = (schedule) => (schedule.schedule_type || 'schedule') === 'title';
+            
+            const daySchedules = allSchedules.filter(schedule => {
+                if (!isVisibleSchedule(schedule)) {
+                    return false;
+                }
+                const scheduleStart = schedule.start_date.split(' ')[0];
+                const scheduleEnd = schedule.end_date ? schedule.end_date.split(' ')[0] : scheduleStart;
+                return dateStr >= scheduleStart && dateStr <= scheduleEnd;
+            }).map(schedule => {
+                const scheduleStart = schedule.start_date.split(' ')[0];
+                const scheduleEnd = schedule.end_date ? schedule.end_date.split(' ')[0] : scheduleStart;
+                return {
+                    ...schedule,
+                    isRange: scheduleStart !== scheduleEnd,
+                    isRangeStart: dateStr === scheduleStart,
+                    isRangeEnd: dateStr === scheduleEnd
+                };
+            });
+
+            dayDiv.innerHTML = `<div class="day-number">${day}</div>`;
+
+            const eventsDiv = document.createElement('div');
+            eventsDiv.className = 'day-events';
+
+            daySchedules.slice(0, 2).forEach(schedule => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'day-event' + (schedule.is_completed ? ' completed' : '');
+                if (schedule.isRange) {
+                    if (schedule.isRangeStart) {
+                        eventDiv.classList.add('span-start');
+                        eventDiv.textContent = schedule.title;
+                    } else if (schedule.isRangeEnd) {
+                        eventDiv.classList.add('span-end');
+                        eventDiv.textContent = '';
+                    } else {
+                        eventDiv.classList.add('span-mid');
+                        eventDiv.textContent = '';
+                    }
+                } else {
+                    eventDiv.textContent = schedule.title;
+                }
+                eventDiv.title = schedule.title;
+                eventDiv.style.background = schedule.color || '#5A9FD4';
+                eventDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    editSchedule(schedule.id);
+                };
+                eventsDiv.appendChild(eventDiv);
+            });
+
+            dayDiv.appendChild(eventsDiv);
+
+            dayDiv.onclick = () => {
+                if (!isOtherMonth) {
+                    openCreateModalWithDate(dateStr);
+                }
+            };
+
+            return dayDiv;
+        }
+
+        function renderSidebar() {
+            const sidebar = document.getElementById('scheduleListSidebar');
+            const emptyState = document.getElementById('emptyState');
+            const query = (document.getElementById('searchBox').value || '').toLowerCase().trim();
+
+            const monthStart = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+            const monthEnd = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(new Date(currentYear, currentMonth + 1, 0).getDate()).padStart(2, '0')}`;
+
+            const matchesCurrentMonth = (schedule) => {
+                const scheduleStart = (schedule.start_date || '').split(' ')[0];
+                const scheduleEnd = schedule.end_date ? schedule.end_date.split(' ')[0] : scheduleStart;
+                return scheduleStart <= monthEnd && scheduleEnd >= monthStart;
+            };
+
+            const isVisibleSchedule = (schedule) => (schedule.schedule_type || 'schedule') === 'title';
+            const visibleSchedules = allSchedules.filter(schedule => {
+                if (!isVisibleSchedule(schedule)) {
+                    return false;
+                }
+
+                if (query) {
+                    return schedule.title.toLowerCase().includes(query) ||
+                        (schedule.description || '').toLowerCase().includes(query);
+                }
+
+                return matchesCurrentMonth(schedule);
+            });
+
+            if (visibleSchedules.length === 0) {
+                sidebar.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            sidebar.innerHTML = visibleSchedules.map(s => `
+                <div class="schedule-item ${s.is_completed ? 'completed' : ''}" style="border-left-color: ${s.color || '#5A9FD4'};" onclick="editSchedule(${s.id})">
+                    <div class="schedule-item-title">${s.title}</div>
+                    <div class="schedule-item-date">${s.start_date}</div>
+                </div>
+            `).join('');
+        }
+
+        // Modal Functions
+        function openModal() {
+            document.getElementById('scheduleModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.remove('show');
+            document.getElementById('scheduleForm').reset();
+            document.getElementById('scheduleId').value = '';
+            document.getElementById('btnDelete').style.display = 'none';
+        }
+
+        function openCreateModal() {
+            setModalTitle('create');
+            document.getElementById('scheduleId').value = '';
+            document.getElementById('scheduleTitle').value = '';
+            document.getElementById('scheduleDescription').value = '계획';
+            document.getElementById('scheduleStartDate').value = '';
+            document.getElementById('scheduleEndDate').value = '';
+            document.getElementById('scheduleType').value = 'schedule';
+            document.getElementById('scheduleColor').value = '#5A9FD4';
+            document.getElementById('scheduleCompleted').checked = false;
+            document.getElementById('btnDelete').style.display = 'none';
+            openModal();
+        }
+
+        function openCreateModalWithDate(date) {
+            setModalTitle('create');
+            document.getElementById('scheduleId').value = '';
+            document.getElementById('scheduleTitle').value = '';
+            document.getElementById('scheduleDescription').value = '계획';
+            document.getElementById('scheduleStartDate').value = date + 'T09:00';
+            document.getElementById('scheduleEndDate').value = '';
+            document.getElementById('scheduleType').value = 'schedule';
+            document.getElementById('scheduleColor').value = '#5A9FD4';
+            document.getElementById('scheduleCompleted').checked = false;
+            document.getElementById('btnDelete').style.display = 'none';
+            openModal();
+        }
+
+        async function editSchedule(id) {
+            try {
+                const response = await fetch(`/desktop/schedule/${id}`);
+                const schedule = await response.json();
+                
+                setModalTitle('edit');
+                document.getElementById('scheduleId').value = schedule.id;
+                document.getElementById('scheduleTitle').value = schedule.title;
+                document.getElementById('scheduleDescription').value = schedule.description || '';
+                document.getElementById('scheduleType').value = schedule.schedule_type || 'schedule';
+                document.getElementById('scheduleColor').value = schedule.color || '#5A9FD4';
+                
+                if (schedule.start_date) {
+                    const startDate = new Date(schedule.start_date);
+                    document.getElementById('scheduleStartDate').value = startDate.toISOString().slice(0, 16);
+                }
+                if (schedule.end_date) {
+                    const endDate = new Date(schedule.end_date);
+                    document.getElementById('scheduleEndDate').value = endDate.toISOString().slice(0, 16);
+                }
+                
+                document.getElementById('scheduleCompleted').checked = schedule.is_completed;
+                document.getElementById('btnDelete').style.display = 'block';
+                openModal();
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                alert('일정을 불러오지 못했습니다.');
+            }
+        }
+
+        async function saveSchedule() {
+            const id = document.getElementById('scheduleId').value;
+            const title = document.getElementById('scheduleTitle').value;
+            let description = document.getElementById('scheduleDescription').value;
+            const scheduleType = document.getElementById('scheduleType').value;
+            const color = document.getElementById('scheduleColor').value;
+            const startDate = document.getElementById('scheduleStartDate').value;
+            const endDate = document.getElementById('scheduleEndDate').value;
+            const isCompleted = document.getElementById('scheduleCompleted').checked;
+
+            if (scheduleType === 'schedule' && !description.trim()) {
+                description = '계획';
+            }
+
+            if (!title || !startDate) {
+                alert('필수 항목을 입력해 주세요.');
+                return;
+            }
+
+            const data = {
+                title, description, schedule_type: scheduleType, start_date: startDate,
+                end_date: endDate || null, is_completed: isCompleted, color
+            };
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/schedule/${id}` : '/api/schedule';
+                const response = await fetch(url, {
+                    method, headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeModal();
+                    loadSchedules();
+                } else {
+                    alert('실패: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('일정 저장에 실패했습니다.');
+            }
+        }
+
+        async function deleteScheduleFromModal() {
+            const id = document.getElementById('scheduleId').value;
+            if (!id) return;
+            if (confirm('이 일정을 삭제할까요?')) {
+                try {
+                    await fetch(`/api/schedule/${id}`, { method: 'DELETE' });
+                    closeModal();
+                    loadSchedules();
+                } catch (error) {
+                    alert('일정 삭제에 실패했습니다.');
+                }
+            }
+        }
+
+        document.getElementById('scheduleModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            renderSidebar();
+        });
+
+        // Auto refresh
+        setInterval(() => {
+            loadSchedules();
+        }, 30000);
+
+        // ======================= Chatbot Modal =======================
+        let chatHistory = [];
+
+        function openChatbotModal() {
+            document.getElementById('chatbotModal').classList.add('show');
+            document.getElementById('chatInput').focus();
+        }
+
+        function closeChatbotModal() {
+            document.getElementById('chatbotModal').classList.remove('show');
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            addChatMessage('user', message);
+            input.value = '';
+
+            const sendBtn = document.getElementById('chatSendBtn');
+            sendBtn.disabled = true;
+
+            showChatTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                hideChatTypingIndicator();
+
+                if (data.success) {
+                    addChatMessage('assistant', data.message);
+                } else {
+                    addChatMessage('assistant', '❌ ' + (data.error || '오류가 발생했습니다.'));
+                }
+            } catch (error) {
+                hideChatTypingIndicator();
+                addChatMessage('assistant', '❌ 서버 연결에 실패했습니다.');
+                console.error('Error:', error);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        function addChatMessage(role, content) {
+            const messagesDiv = document.getElementById('chatMessagesContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-msg ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'chat-msg-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showChatTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessagesContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-msg assistant';
+            typingDiv.id = 'chatTypingIndicator';
+            typingDiv.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function hideChatTypingIndicator() {
+            const typingIndicator = document.getElementById('chatTypingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
+
+        document.getElementById('chatbotModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeChatbotModal();
+        });
+    </script>
+</body>
+</html>

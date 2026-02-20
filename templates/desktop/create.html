@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일정 추가 - 나의 비서</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F2F8FB 0%, #E8EFF7 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #BED9F0;
+            box-shadow: 0 0 0 3px rgba(190, 217, 240, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: #BED9F0;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #89BADB;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(190, 217, 240, 0.4);
+        }
+
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>📝 새 일정 추가</h1>
+        
+        <div class="success-message" id="successMsg">✅ 일정이 생성되었습니다!</div>
+        <div class="error-message" id="errorMsg"></div>
+
+        <form id="scheduleForm">
+            <div class="form-group">
+                <label for="title">일정 제목 *</label>
+                <input type="text" id="title" name="title" placeholder="일정 제목을 입력하세요" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">설명</label>
+                <textarea id="description" name="description" placeholder="상세 내용을 입력하세요 (선택사항)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="startDate">시작 일시 *</label>
+                <input type="datetime-local" id="startDate" name="startDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="endDate">종료 일시</label>
+                <input type="datetime-local" id="endDate" name="endDate">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-submit">저장</button>
+                <a href="{{ url_for('desktop_index') }}" class="btn btn-cancel" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">취소</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value || null
+            };
+
+            try {
+                const response = await fetch('/api/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('successMsg').style.display = 'block';
+                    document.getElementById('scheduleForm').reset();
+                    setTimeout(() => {
+                        window.location.href = '{{ url_for("desktop_index") }}';
+                    }, 1500);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                document.getElementById('errorMsg').textContent = '❌ 오류: ' + error.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        });
+
+        // 현재 시간을 기본값으로 설정
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('startDate').value = now.toISOString().slice(0, 16);
+    </script>
+</body>
+</html>

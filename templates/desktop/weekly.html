@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Secretary - 주간 계획표</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .sub {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 20px 40px;
+        }
+
+        .range {
+            margin-bottom: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 999px;
+            padding: 7px 14px;
+        }
+
+        .planner {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .planner th,
+        .planner td {
+            border-right: 1px solid #e6e6e6;
+            border-bottom: 1px solid #e6e6e6;
+            vertical-align: top;
+            padding: 7px;
+            font-size: 13px;
+            background: #ffffff;
+        }
+
+        .planner tr:last-child td {
+            border-bottom: none;
+        }
+
+        .planner th:last-child,
+        .planner td:last-child {
+            border-right: none;
+        }
+
+        .planner th {
+            text-align: center;
+            font-weight: 700;
+            background: #f8f9fb;
+            color: #666;
+            height: 48px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .time-col {
+            width: 100px;
+            text-align: center;
+            font-weight: 700;
+            color: #555;
+            background: #f8f9fb !important;
+        }
+
+        .todo-label {
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle !important;
+            letter-spacing: 0.4px;
+            color: #2E5AA8;
+            background: #eef4fb !important;
+        }
+
+        .title-label {
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle !important;
+            letter-spacing: 0.4px;
+            color: #2f7f60;
+            background: #edf7f1 !important;
+        }
+
+        .title-row td {
+            min-height: 64px;
+            height: 64px;
+            background: #fbfefc;
+        }
+
+        .title-cell {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .title-cell:hover {
+            background: #f2fbf6 !important;
+        }
+
+        .title-entry {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            line-height: 1.3;
+            min-height: 20px;
+            word-break: break-word;
+            background: #2f7f60;
+            border: 1px solid #2f7f60;
+            color: #fff;
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+
+        .title-entry.range-start {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            margin-right: -7px;
+            padding-right: 7px;
+        }
+
+        .title-entry.range-mid {
+            border-radius: 0;
+            margin-left: -7px;
+            margin-right: -7px;
+            text-align: center;
+            color: transparent;
+        }
+
+        .title-entry.range-end {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            margin-left: -7px;
+            padding-left: 7px;
+            text-align: center;
+            color: transparent;
+        }
+
+        .title-entry.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .todo-row td {
+            min-height: 124px;
+            height: 124px;
+            background: #fcfdff;
+        }
+
+        .hour-row td {
+            height: 46px;
+        }
+
+        .todo-cell {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .todo-cell:hover {
+            background: #f3f8ff !important;
+        }
+
+        .hour-cell {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .hour-cell:hover {
+            background: #f0f6ff;
+        }
+
+        .entry {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            line-height: 1.3;
+            word-break: break-word;
+            background: #eef4fb;
+            border: 1px solid #d7e5f5;
+            color: #2E5AA8;
+            border-radius: 6px;
+            padding: 2px 6px;
+        }
+
+        .entry.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .entry.editable,
+        .todo-text.editable {
+            cursor: pointer;
+        }
+
+        .todo-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            line-height: 1.3;
+            background: #eef4fb;
+            border: 1px solid #d7e5f5;
+            color: #2E5AA8;
+            border-radius: 6px;
+            padding: 4px 6px;
+        }
+
+        .todo-check {
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .todo-text.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .empty {
+            color: #a0aec0;
+            font-size: 12px;
+        }
+
+        .schedule-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .schedule-modal.open {
+            display: flex;
+        }
+
+        .schedule-dialog {
+            width: 100%;
+            max-width: 560px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
+            overflow: hidden;
+        }
+
+        .schedule-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid #ececec;
+        }
+
+        .schedule-dialog-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .schedule-dialog-title-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef4fb;
+            color: #2E5AA8;
+        }
+
+        .schedule-dialog-title-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .schedule-dialog-close {
+            border: none;
+            background: transparent;
+            color: #888;
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .schedule-dialog-close:hover {
+            background: #f1f3f5;
+        }
+
+        .schedule-form {
+            padding: 22px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .schedule-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .schedule-field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #444;
+        }
+
+        .schedule-field input,
+        .schedule-field select,
+        .schedule-field textarea {
+            width: 100%;
+            border: 1px solid #d8dbe2;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #333;
+            background: #fff;
+        }
+
+        .schedule-field input[type="color"] {
+            padding: 0;
+            height: 42px;
+            cursor: pointer;
+        }
+
+        .schedule-field textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .schedule-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #333;
+            margin-top: 2px;
+        }
+
+        .schedule-check input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .schedule-actions {
+            margin-top: 4px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .schedule-action-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .schedule-action-cancel {
+            background: #e8e8e8;
+            color: #555;
+        }
+
+        .schedule-action-delete {
+            background: #ff6969;
+            color: #fff;
+        }
+
+        .schedule-action-save {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: #fff;
+        }
+
+        .schedule-action-delete.hidden {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            .planner th,
+            .planner td {
+                font-size: 11px;
+                padding: 4px;
+            }
+
+            .time-col {
+                width: 70px;
+            }
+
+            .topbar {
+                padding: 14px 16px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .content {
+                padding: 14px 16px;
+            }
+        }
+
+        /* ======================= Chatbot Modal Styles ======================= */
+        .chatbot-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .chatbot-modal.show {
+            display: flex;
+        }
+
+        .chatbot-modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            height: 70vh;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .chatbot-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chatbot-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .chatbot-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-welcome {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .chat-msg {
+            display: flex;
+            margin-bottom: 12px;
+            animation: fadeInChat 0.3s ease-in;
+        }
+
+        .chat-msg.user {
+            justify-content: flex-end;
+        }
+
+        .chat-msg.assistant {
+            justify-content: flex-start;
+        }
+
+        .chat-msg-content {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .chat-msg.user .chat-msg-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-msg.assistant .chat-msg-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-typing {
+            display: flex;
+            gap: 4px;
+            padding: 8px 14px;
+            background: white;
+            border-radius: 14px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chat-typing span {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounceChat 1.4s infinite;
+        }
+
+        .chat-typing span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .chat-typing span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes fadeInChat {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounceChat {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .chatbot-input-container {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chatbot-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chatbot-input:focus {
+            border-color: #667eea;
+        }
+
+        .chatbot-send-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .chatbot-send-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .chatbot-send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="topbar">
+        <div>
+            <div class="title">주간 계획표</div>
+            <div class="sub">요일별 / 시간별 스케줄 보기</div>
+        </div>
+        <div class="actions">
+            <button class="btn" id="prevWeekBtn">◀ 이전 주</button>
+            <button class="btn" id="nextWeekBtn">다음 주 ▶</button>
+            <button class="btn" onclick="openWeeklyChatbotModal()" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;">🤖 챗봇</button>
+            <a class="btn" href="{{ url_for('desktop_index') }}">달력으로 돌아가기</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="range" id="rangeText">불러오는 중...</div>
+
+        <table class="planner" id="plannerTable">
+            <thead id="plannerHead"></thead>
+            <tbody id="plannerBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="schedule-modal" id="scheduleModal" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+    <div class="schedule-dialog">
+        <div class="schedule-dialog-header">
+            <div class="schedule-dialog-title" id="scheduleModalTitle">
+                <span class="schedule-dialog-title-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>
+                </span>
+                <span id="scheduleModalTitleText">일정 수정</span>
+            </div>
+            <button type="button" class="schedule-dialog-close" id="scheduleModalClose">✕</button>
+        </div>
+        <form class="schedule-form" id="scheduleForm">
+            <div class="schedule-field">
+                <label for="modalTitleInput">일정 제목 *</label>
+                <input id="modalTitleInput" type="text" required>
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalDescriptionInput">설명</label>
+                <textarea id="modalDescriptionInput"></textarea>
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalTypeInput">구분</label>
+                <select id="modalTypeInput">
+                    <option value="title">제목</option>
+                    <option value="todo">할 일</option>
+                    <option value="schedule">일정</option>
+                </select>
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalColorInput">색상</label>
+                <input id="modalColorInput" type="color" value="#5A9FD4">
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalStartInput">시작 일시 *</label>
+                <input id="modalStartInput" type="datetime-local" required>
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalEndInput">종료 일시</label>
+                <input id="modalEndInput" type="datetime-local">
+            </div>
+
+            <label class="schedule-check" for="modalCompletedInput">
+                <input id="modalCompletedInput" type="checkbox">
+                완료
+            </label>
+
+            <div class="schedule-actions">
+                <button type="button" class="schedule-action-btn schedule-action-cancel" id="modalCancelBtn">취소</button>
+                <button type="button" class="schedule-action-btn schedule-action-delete" id="modalDeleteBtn">🗑 삭제</button>
+                <button type="submit" class="schedule-action-btn schedule-action-save" id="modalSaveBtn">✓ 저장</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Chatbot Modal -->
+<div id="weeklyChatbotModal" class="chatbot-modal">
+    <div class="chatbot-modal-content">
+        <div class="chatbot-modal-header">
+            <h2 style="font-size: 18px; font-weight: 600;">🤖 AI 일정 비서</h2>
+            <button class="chatbot-modal-close" onclick="closeWeeklyChatbotModal()">✕</button>
+        </div>
+        <div class="chatbot-messages" id="weeklyChatMessagesContainer">
+            <div class="chat-welcome">
+                <p><strong>안녕하세요! 😊</strong></p>
+                <p style="font-size: 13px; color: #666; margin-top: 8px;">자연스러운 대화로 일정을 관리해보세요!</p>
+                <div style="margin-top: 12px; font-size: 12px; color: #999;">
+                    <p>예: "내일 오후 3시 회의 추가해줘"</p>
+                    <p>예: "이번 주 일정 보여줘"</p>
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input-container">
+            <input 
+                type="text" 
+                id="weeklyChatInput" 
+                class="chatbot-input" 
+                placeholder="메시지를 입력하세요..."
+                autocomplete="off"
+            >
+            <button id="weeklyChatSendBtn" class="chatbot-send-btn" onclick="sendWeeklyChatMessage()">전송</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dayKeys = ['월', '화', '수', '목', '금', '토', '일'];
+    let currentWeekStart = null;
+    let dayDateMap = {};
+    let editingScheduleId = null;
+    const createTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
+    const editTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>';
+
+    const scheduleModal = document.getElementById('scheduleModal');
+    const scheduleForm = document.getElementById('scheduleForm');
+    const scheduleModalTitle = document.getElementById('scheduleModalTitle');
+    const modalTitleInput = document.getElementById('modalTitleInput');
+    const modalDescriptionInput = document.getElementById('modalDescriptionInput');
+    const modalTypeInput = document.getElementById('modalTypeInput');
+    const modalColorInput = document.getElementById('modalColorInput');
+    const modalStartInput = document.getElementById('modalStartInput');
+    const modalEndInput = document.getElementById('modalEndInput');
+    const modalCompletedInput = document.getElementById('modalCompletedInput');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const scheduleModalClose = document.getElementById('scheduleModalClose');
+
+    function setScheduleModalTitle(mode) {
+        const isEdit = mode === 'edit';
+        const icon = isEdit ? editTitleIconSvg : createTitleIconSvg;
+        const text = isEdit ? '일정 수정' : '일정 생성';
+        scheduleModalTitle.innerHTML = `<span class="schedule-dialog-title-icon" aria-hidden="true">${icon}</span><span id="scheduleModalTitleText">${text}</span>`;
+    }
+
+    function formatHour(hour) {
+        return `${hour}시`;
+    }
+
+    function toDatetimeLocalValue(value) {
+        if (!value) return '';
+        const normalized = String(value).trim().replace(' ', 'T');
+        return normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
+    }
+
+    function openScheduleModal(mode, data) {
+        editingScheduleId = mode === 'edit' ? data.id : null;
+        setScheduleModalTitle(mode);
+        modalDeleteBtn.classList.toggle('hidden', mode !== 'edit');
+
+        modalTitleInput.value = data.title || '';
+        modalDescriptionInput.value = data.description || '';
+        modalTypeInput.value = data.schedule_type || 'schedule';
+        modalColorInput.value = data.color || '#5A9FD4';
+        modalStartInput.value = toDatetimeLocalValue(data.start_date);
+        modalEndInput.value = toDatetimeLocalValue(data.end_date);
+        modalCompletedInput.checked = Boolean(data.is_completed);
+
+        scheduleModal.classList.add('open');
+        modalTitleInput.focus();
+    }
+
+    function closeScheduleModal() {
+        scheduleModal.classList.remove('open');
+        editingScheduleId = null;
+        scheduleForm.reset();
+        modalTypeInput.value = 'schedule';
+        modalColorInput.value = '#5A9FD4';
+    }
+
+    function addDays(dateStr, diff) {
+        const d = new Date(`${dateStr}T00:00:00`);
+        d.setDate(d.getDate() + diff);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function loadWeeklyPlan(start) {
+        const url = start ? `/api/weekly-plan?start=${encodeURIComponent(start)}` : '/api/weekly-plan';
+        const res = await fetch(url);
+        const result = await res.json();
+
+        if (!result.success) {
+            alert(result.error || '주간 계획표를 불러오지 못했습니다.');
+            return;
+        }
+
+        currentWeekStart = result.week_start;
+        dayDateMap = {};
+        result.days.forEach((day, index) => {
+            dayDateMap[dayKeys[index]] = addDays(result.week_start, index);
+        });
+        renderTable(result);
+    }
+
+    async function createScheduleFromCell(dayKey, hour) {
+        const date = dayDateMap[dayKey];
+        if (!date) return;
+
+        const hh = String(hour).padStart(2, '0');
+        openScheduleModal('create', {
+            title: '',
+            description: '계획',
+            schedule_type: 'schedule',
+            start_date: `${date}T${hh}:00`,
+            end_date: '',
+            is_completed: false
+        });
+    }
+
+    async function createTodoFromDay(dayKey) {
+        const date = dayDateMap[dayKey];
+        if (!date) return;
+
+        openScheduleModal('create', {
+            title: '',
+            description: '',
+            schedule_type: 'todo',
+            start_date: `${date}T08:00`,
+            end_date: '',
+            is_completed: false
+        });
+    }
+
+    async function createTitleFromDay(dayKey) {
+        const date = dayDateMap[dayKey];
+        if (!date) return;
+
+        openScheduleModal('create', {
+            title: '',
+            description: '',
+            schedule_type: 'title',
+            start_date: `${date}T07:00`,
+            end_date: '',
+            is_completed: false
+        });
+    }
+
+    async function toggleTodo(scheduleId, isCompleted) {
+        const res = await fetch(`/api/schedule/${scheduleId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                is_completed: isCompleted
+            })
+        });
+
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+            alert(result.message || result.error || 'TO-DO 상태 변경에 실패했습니다.');
+            return;
+        }
+
+        await loadWeeklyPlan(currentWeekStart);
+    }
+
+    async function deleteScheduleItem(scheduleId, itemName) {
+        const res = await fetch(`/api/schedule/${scheduleId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+            alert(result.message || result.error || `${itemName} 삭제에 실패했습니다.`);
+            return;
+        }
+
+        await loadWeeklyPlan(currentWeekStart);
+    }
+
+    async function openEditScheduleModal(scheduleId) {
+        const res = await fetch(`/desktop/schedule/${scheduleId}`);
+        const result = await res.json();
+
+        if (!res.ok) {
+            alert(result.message || result.error || '일정 정보를 불러오지 못했습니다.');
+            return;
+        }
+
+        openScheduleModal('edit', result);
+    }
+
+    async function saveScheduleFromModal(event) {
+        event.preventDefault();
+
+        const title = modalTitleInput.value.trim();
+        const startDate = modalStartInput.value;
+        if (!title) {
+            alert('제목을 입력해 주세요.');
+            modalTitleInput.focus();
+            return;
+        }
+        if (!startDate) {
+            alert('시작일시는 필수입니다.');
+            modalStartInput.focus();
+            return;
+        }
+
+        const payload = {
+            title,
+            description: modalDescriptionInput.value.trim(),
+            schedule_type: modalTypeInput.value,
+            color: modalColorInput.value,
+            start_date: startDate,
+            end_date: modalEndInput.value || null,
+            is_completed: modalCompletedInput.checked
+        };
+
+        const isEdit = Boolean(editingScheduleId);
+        const url = isEdit ? `/api/schedule/${editingScheduleId}` : '/api/schedule';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+            alert(result.message || result.error || '일정 저장에 실패했습니다.');
+            return;
+        }
+
+        closeScheduleModal();
+        await loadWeeklyPlan(currentWeekStart);
+    }
+
+    async function deleteScheduleFromModal() {
+        if (!editingScheduleId) return;
+        const confirmed = confirm('해당 일정을 삭제할까요?');
+        if (!confirmed) return;
+
+        await deleteScheduleItem(editingScheduleId, '일정');
+        closeScheduleModal();
+    }
+
+    function renderTable(data) {
+        document.getElementById('rangeText').textContent = `${data.week_start} ~ ${data.week_end}`;
+
+        const head = document.getElementById('plannerHead');
+        const body = document.getElementById('plannerBody');
+
+        head.innerHTML = '';
+        body.innerHTML = '';
+
+        const headRow = document.createElement('tr');
+        const blank = document.createElement('th');
+        blank.className = 'time-col';
+        blank.textContent = '';
+        headRow.appendChild(blank);
+
+        data.days.forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = `${day.label} (${day.date})`;
+            headRow.appendChild(th);
+        });
+        head.appendChild(headRow);
+
+        const titleDayIds = {};
+        dayKeys.forEach((key) => {
+            titleDayIds[key] = new Set((data.title_by_day?.[key] || []).map(item => item.id));
+        });
+
+        const titleRow = document.createElement('tr');
+        titleRow.className = 'title-row';
+        const titleLabel = document.createElement('td');
+        titleLabel.className = 'title-label time-col';
+        titleLabel.textContent = '제목';
+        titleRow.appendChild(titleLabel);
+
+        dayKeys.forEach(key => {
+            const td = document.createElement('td');
+            td.className = 'title-cell';
+            td.title = '클릭해서 제목 추가';
+            const items = data.title_by_day?.[key] || [];
+            if (!items.length) {
+                td.innerHTML = '<span class="empty">-</span>';
+            } else {
+                items.forEach(item => {
+                    const dayIndex = dayKeys.indexOf(key);
+                    const prevKey = dayIndex > 0 ? dayKeys[dayIndex - 1] : null;
+                    const nextKey = dayIndex < dayKeys.length - 1 ? dayKeys[dayIndex + 1] : null;
+                    const hasPrev = prevKey ? titleDayIds[prevKey].has(item.id) : false;
+                    const hasNext = nextKey ? titleDayIds[nextKey].has(item.id) : false;
+
+                    const entry = document.createElement('span');
+                    entry.className = `title-entry editable${item.is_completed ? ' completed' : ''}`;
+                    const titleColor = item.color || '#2f7f60';
+                    entry.style.background = titleColor;
+                    entry.style.borderColor = titleColor;
+                    if (hasPrev && hasNext) {
+                        entry.classList.add('range-mid');
+                        entry.textContent = ' ';
+                    } else if (hasPrev) {
+                        entry.classList.add('range-end');
+                        entry.textContent = ' ';
+                    } else if (hasNext) {
+                        entry.classList.add('range-start');
+                        entry.textContent = item.title;
+                    } else {
+                        entry.textContent = item.title;
+                    }
+                    entry.addEventListener('click', async (event) => {
+                        event.stopPropagation();
+                        await openEditScheduleModal(item.id);
+                    });
+                    td.appendChild(entry);
+                });
+            }
+            td.addEventListener('click', () => createTitleFromDay(key));
+            titleRow.appendChild(td);
+        });
+        body.appendChild(titleRow);
+
+        const todoRow = document.createElement('tr');
+        todoRow.className = 'todo-row';
+        const todoLabel = document.createElement('td');
+        todoLabel.className = 'todo-label time-col';
+        todoLabel.textContent = '할 일 목록';
+        todoRow.appendChild(todoLabel);
+
+        dayKeys.forEach(key => {
+            const td = document.createElement('td');
+            td.className = 'todo-cell';
+            td.title = '클릭해서 TO-DO 추가';
+            const items = data.todo_by_day[key] || [];
+            if (!items.length) {
+                td.innerHTML = '<span class="empty">-</span>';
+            } else {
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'todo-entry';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'todo-check';
+                    checkbox.checked = Boolean(item.is_completed);
+                    checkbox.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                    });
+                    checkbox.addEventListener('change', async (event) => {
+                        event.stopPropagation();
+                        await toggleTodo(item.id, event.target.checked);
+                    });
+
+                    const text = document.createElement('span');
+                    text.className = `todo-text editable${item.is_completed ? ' completed' : ''}`;
+                    text.textContent = item.title;
+                    text.addEventListener('click', async (event) => {
+                        event.stopPropagation();
+                        await openEditScheduleModal(item.id);
+                    });
+
+                    row.appendChild(checkbox);
+                    row.appendChild(text);
+                    td.appendChild(row);
+                });
+            }
+            td.addEventListener('click', () => createTodoFromDay(key));
+            todoRow.appendChild(td);
+        });
+        body.appendChild(todoRow);
+
+        data.hours.forEach(hour => {
+            const row = document.createElement('tr');
+            row.className = 'hour-row';
+
+            const timeCell = document.createElement('td');
+            timeCell.className = 'time-col';
+            timeCell.textContent = formatHour(hour);
+            row.appendChild(timeCell);
+
+            dayKeys.forEach(key => {
+                const cell = document.createElement('td');
+                cell.className = 'hour-cell';
+                cell.title = '클릭해서 일정 추가';
+                const items = ((data.grid[hour] || {})[key]) || [];
+                if (!items.length) {
+                    cell.innerHTML = '<span class="empty"></span>';
+                } else {
+                    items.forEach(item => {
+                        const entry = document.createElement('span');
+                        entry.className = `entry editable${item.is_completed ? ' completed' : ''}`;
+                        entry.textContent = item.label;
+                        entry.addEventListener('click', async (event) => {
+                            event.stopPropagation();
+                            await openEditScheduleModal(item.id);
+                        });
+                        cell.appendChild(entry);
+                    });
+                }
+                cell.addEventListener('click', () => createScheduleFromCell(key, hour));
+                row.appendChild(cell);
+            });
+
+            body.appendChild(row);
+        });
+    }
+
+    document.getElementById('prevWeekBtn').addEventListener('click', () => {
+        if (!currentWeekStart) return;
+        loadWeeklyPlan(addDays(currentWeekStart, -7));
+    });
+
+    document.getElementById('nextWeekBtn').addEventListener('click', () => {
+        if (!currentWeekStart) return;
+        loadWeeklyPlan(addDays(currentWeekStart, 7));
+    });
+
+    scheduleForm.addEventListener('submit', saveScheduleFromModal);
+    modalCancelBtn.addEventListener('click', closeScheduleModal);
+    scheduleModalClose.addEventListener('click', closeScheduleModal);
+    modalDeleteBtn.addEventListener('click', deleteScheduleFromModal);
+    scheduleModal.addEventListener('click', (event) => {
+        if (event.target === scheduleModal) {
+            closeScheduleModal();
+        }
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const start = params.get('start');
+    loadWeeklyPlan(start);
+
+    // ======================= Chatbot Modal =======================
+    function openWeeklyChatbotModal() {
+        document.getElementById('weeklyChatbotModal').classList.add('show');
+        document.getElementById('weeklyChatInput').focus();
+    }
+
+    function closeWeeklyChatbotModal() {
+        document.getElementById('weeklyChatbotModal').classList.remove('show');
+    }
+
+    async function sendWeeklyChatMessage() {
+        const input = document.getElementById('weeklyChatInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+
+        addWeeklyChatMessage('user', message);
+        input.value = '';
+
+        const sendBtn = document.getElementById('weeklyChatSendBtn');
+        sendBtn.disabled = true;
+
+        showWeeklyChatTypingIndicator();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await response.json();
+            hideWeeklyChatTypingIndicator();
+
+            if (data.success) {
+                addWeeklyChatMessage('assistant', data.message);
+            } else {
+                addWeeklyChatMessage('assistant', '❌ ' + (data.error || '오류가 발생했습니다.'));
+            }
+        } catch (error) {
+            hideWeeklyChatTypingIndicator();
+            addWeeklyChatMessage('assistant', '❌ 서버 연결에 실패했습니다.');
+            console.error('Error:', error);
+        } finally {
+            sendBtn.disabled = false;
+        }
+    }
+
+    function addWeeklyChatMessage(role, content) {
+        const messagesDiv = document.getElementById('weeklyChatMessagesContainer');
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-msg ${role}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'chat-msg-content';
+        contentDiv.textContent = content;
+        
+        messageDiv.appendChild(contentDiv);
+        messagesDiv.appendChild(messageDiv);
+        
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showWeeklyChatTypingIndicator() {
+        const messagesDiv = document.getElementById('weeklyChatMessagesContainer');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-msg assistant';
+        typingDiv.id = 'weeklyChatTypingIndicator';
+        typingDiv.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+        messagesDiv.appendChild(typingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function hideWeeklyChatTypingIndicator() {
+        const typingIndicator = document.getElementById('weeklyChatTypingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    document.getElementById('weeklyChatInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendWeeklyChatMessage();
+        }
+    });
+
+    document.getElementById('weeklyChatbotModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeWeeklyChatbotModal();
+    });
+</script>
+</body>
+</html>
