@@ -232,13 +232,18 @@
         }
 
         .nav-button {
-            padding: 10px 20px;
+            padding: 8px 10px;
             background: rgba(255, 255, 255, 0.2);
             color: white;
             text-decoration: none;
-            border-radius: 20px;
+            border-radius: 6px;
+            border: 1px solid white;
             backdrop-filter: blur(10px);
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
         }
 
         .nav-button:hover {
@@ -277,8 +282,8 @@
 </head>
 <body>
     <div class="nav-buttons">
-        <a href="/desktop" class="nav-button"><span class="material-symbols-rounded">calendar_month</span> 캘린더</a>
-        <a href="/mobile" class="nav-button"><span class="material-symbols-rounded">smartphone</span> 모바일</a>
+        <a href="/desktop" class="nav-button" title="캘린더" aria-label="캘린더"><span class="material-symbols-rounded">calendar_month</span></a>
+        <a href="/mobile" class="nav-button" title="모바일" aria-label="모바일"><span class="material-symbols-rounded">smartphone</span></a>
     </div>
 
     <div class="chat-container">

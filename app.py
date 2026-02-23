@@ -4,6 +4,7 @@ from models import Schedule
 from datetime import datetime, timedelta, time
 from dotenv import load_dotenv
 from sqlalchemy import inspect, text, and_, or_
+from werkzeug.utils import secure_filename
 import re
 import os
 
@@ -20,6 +21,14 @@ db.init_app(app)
 SCHEDULE_TYPES = {'schedule', 'todo', 'detail', 'title'}
 DEFAULT_SCHEDULE_COLOR = '#5A9FD4'
 _schema_checked = False
+KIDS_SCHEDULE_FOLDER = os.path.join(app.root_path, 'static', 'kids_schedule')
+KIDS_SCHEDULE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+os.makedirs(KIDS_SCHEDULE_FOLDER, exist_ok=True)
+
+
+def is_allowed_kids_schedule_file(filename: str) -> bool:
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in KIDS_SCHEDULE_EXTENSIONS
 
 
 def ensure_schedule_schema() -> None:
@@ -239,6 +248,64 @@ def desktop_create_page():
 def desktop_weekly_page():
     """데스크톱: 주간 계획표 페이지"""
     return render_template('desktop/weekly.html')
+
+
+@app.route('/kids/schedule/list')
+def kids_schedule_list():
+    """아이들 스케줄 표 이미지 목록"""
+    items = []
+    try:
+        for filename in os.listdir(KIDS_SCHEDULE_FOLDER):
+            if not is_allowed_kids_schedule_file(filename):
+                continue
+            full_path = os.path.join(KIDS_SCHEDULE_FOLDER, filename)
+            if not os.path.isfile(full_path):
+                continue
+            items.append({
+                'name': filename,
+                'url': url_for('static', filename=f'kids_schedule/{filename}')
+            })
+    except Exception:
+        items = []
+
+    items.sort(key=lambda item: item['name'], reverse=True)
+    return jsonify({'files': items})
+
+
+@app.route('/kids/schedule/upload', methods=['POST'])
+def kids_schedule_upload():
+    """아이들 스케줄 표 이미지 업로드"""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': '업로드 파일이 없습니다.'}), 400
+
+    file = request.files['file']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': '파일 이름이 없습니다.'}), 400
+
+    if not is_allowed_kids_schedule_file(file.filename):
+        return jsonify({'success': False, 'message': '지원하지 않는 파일 형식입니다.'}), 400
+
+    safe_name = secure_filename(file.filename)
+    if not safe_name:
+        return jsonify({'success': False, 'message': '파일 이름이 올바르지 않습니다.'}), 400
+
+    base, ext = os.path.splitext(safe_name)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    stored_name = f"{base}_{timestamp}{ext.lower()}"
+    stored_path = os.path.join(KIDS_SCHEDULE_FOLDER, stored_name)
+
+    try:
+        file.save(stored_path)
+    except Exception:
+        return jsonify({'success': False, 'message': '파일 저장에 실패했습니다.'}), 500
+
+    return jsonify({
+        'success': True,
+        'file': {
+            'name': stored_name,
+            'url': url_for('static', filename=f'kids_schedule/{stored_name}')
+        }
+    })
 
 @app.route('/desktop/edit/<int:schedule_id>')
 def desktop_edit_page(schedule_id):
