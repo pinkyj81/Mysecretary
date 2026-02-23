@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, time
 from dotenv import load_dotenv
 from sqlalchemy import inspect, text, and_, or_
 import re
+import os
 
 load_dotenv()
 app = Flask(__name__)
@@ -204,6 +205,12 @@ def ensure_schema_before_request():
     except Exception as exc:
         app.logger.exception('Schema pre-check failed but request continues: %s', exc)
 
+
+@app.route('/')
+def index():
+    """홈 페이지 - 데스크톱 이동"""
+    return redirect(url_for('desktop_index'))
+
 # ======================= DESKTOP 라우트 =======================
 
 @app.route('/desktop')
@@ -262,6 +269,11 @@ def mobile_get_schedule(schedule_id):
 def mobile_create_page():
     """모바일: 일정 생성 페이지"""
     return render_template('mobile/create.html')
+
+@app.route('/mobile/weekly')
+def mobile_weekly_page():
+    """모바일: 주간 계획표 페이지"""
+    return render_template('mobile/weekly.html')
 
 @app.route('/mobile/edit/<int:schedule_id>')
 def mobile_edit_page(schedule_id):
@@ -733,11 +745,6 @@ def chat_models():
         'mode': 'rule-based',
         'models': []
     })
-
-@app.route('/')
-def index():
-    """홈 페이지 - 모바일/데스크톱 선택"""
-    return redirect(url_for('desktop_index'))
 
 # ======================= 에러 핸들러 =======================
 
