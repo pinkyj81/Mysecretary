@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Secretary - 주간 계획표</title>
+    <title>시간정원 - 주간 계획표</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0" />
     <style>
         * {
             box-sizing: border-box;
@@ -66,6 +67,12 @@
 
         .btn:hover {
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            line-height: 1;
+            vertical-align: middle;
         }
 
         .content {
@@ -696,9 +703,9 @@
             <div class="sub">요일별 / 시간별 스케줄 보기</div>
         </div>
         <div class="actions">
-            <button class="btn" id="prevWeekBtn">◀ 이전 주</button>
-            <button class="btn" id="nextWeekBtn">다음 주 ▶</button>
-            <button class="btn" onclick="openWeeklyChatbotModal()" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;">🤖 챗봇</button>
+            <button class="btn" id="prevWeekBtn"><span class="material-symbols-rounded">chevron_left</span> 이전 주</button>
+            <button class="btn" id="nextWeekBtn">다음 주 <span class="material-symbols-rounded">chevron_right</span></button>
+            <button class="btn" onclick="openWeeklyChatbotModal()" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">smart_toy</span> 챗봇</button>
             <a class="btn" href="{{ url_for('desktop_index') }}">달력으로 돌아가기</a>
         </div>
     </div>
@@ -722,7 +729,7 @@
                 </span>
                 <span id="scheduleModalTitleText">일정 수정</span>
             </div>
-            <button type="button" class="schedule-dialog-close" id="scheduleModalClose">✕</button>
+            <button type="button" class="schedule-dialog-close" id="scheduleModalClose"><span class="material-symbols-rounded">close</span></button>
         </div>
         <form class="schedule-form" id="scheduleForm">
             <div class="schedule-field">
@@ -766,8 +773,8 @@
 
             <div class="schedule-actions">
                 <button type="button" class="schedule-action-btn schedule-action-cancel" id="modalCancelBtn">취소</button>
-                <button type="button" class="schedule-action-btn schedule-action-delete" id="modalDeleteBtn">🗑 삭제</button>
-                <button type="submit" class="schedule-action-btn schedule-action-save" id="modalSaveBtn">✓ 저장</button>
+                <button type="button" class="schedule-action-btn schedule-action-delete" id="modalDeleteBtn"><span class="material-symbols-rounded">delete</span> 삭제</button>
+                <button type="submit" class="schedule-action-btn schedule-action-save" id="modalSaveBtn"><span class="material-symbols-rounded">check</span> 저장</button>
             </div>
         </form>
     </div>
@@ -777,12 +784,12 @@
 <div id="weeklyChatbotModal" class="chatbot-modal">
     <div class="chatbot-modal-content">
         <div class="chatbot-modal-header">
-            <h2 style="font-size: 18px; font-weight: 600;">🤖 AI 일정 비서</h2>
-            <button class="chatbot-modal-close" onclick="closeWeeklyChatbotModal()">✕</button>
+            <h2 style="font-size: 18px; font-weight: 600;"><span class="material-symbols-rounded">smart_toy</span> AI 일정 비서</h2>
+            <button class="chatbot-modal-close" onclick="closeWeeklyChatbotModal()"><span class="material-symbols-rounded">close</span></button>
         </div>
         <div class="chatbot-messages" id="weeklyChatMessagesContainer">
             <div class="chat-welcome">
-                <p><strong>안녕하세요! 😊</strong></p>
+                <p><strong>안녕하세요!</strong></p>
                 <p style="font-size: 13px; color: #666; margin-top: 8px;">자연스러운 대화로 일정을 관리해보세요!</p>
                 <div style="margin-top: 12px; font-size: 12px; color: #999;">
                     <p>예: "내일 오후 3시 회의 추가해줘"</p>

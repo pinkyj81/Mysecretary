@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>주간 계획표 - 모바일</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 80px;
+        }
+
+        .mobile-header {
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 20px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .mobile-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mobile-header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.18);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .week-nav-btn {
+            background: #BED9F0;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .week-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .day-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #5A9FD4;
+            gap: 4px;
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 40px;
+        }
+
+        .event-item {
+            background: #5A9FD4;
+            color: white;
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .event-time {
+            font-size: 12px;
+            opacity: 0.9;
+            white-space: nowrap;
+        }
+
+        .event-item:active {
+            transform: scale(0.98);
+        }
+
+        .no-events {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            padding: 20px;
+        }
+
+        .mobile-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .footer-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .footer-btn.active {
+            color: #c4b8d8;
+        }
+
+        .footer-icon {
+            font-size: 20px;
+        }
+
+        .footer-btn small {
+            font-size: 10px;
+        }
+
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            line-height: 1;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-header">
+        <div class="header-row">
+            <div>
+                <h1><span class="material-symbols-rounded">calendar_view_week</span>주간 계획표</h1>
+                <p id="weekRange"></p>
+            </div>
+            <a href="/mobile" class="btn-back"><span class="material-symbols-rounded">arrow_back</span></a>
+        </div>
+    </div>
+
+    <div class="week-nav">
+        <button class="week-nav-btn" onclick="changeWeek(-1)"><span class="material-symbols-rounded">chevron_left</span></button>
+        <div class="week-title" id="weekTitle"></div>
+        <button class="week-nav-btn" onclick="changeWeek(1)"><span class="material-symbols-rounded">chevron_right</span></button>
+    </div>
+
+    <div class="content" id="weeklyContent">
+        <!-- JavaScript로 채워짐 -->
+    </div>
+
+    <div class="mobile-footer">
+        <button class="footer-btn" onclick="window.location.href='/mobile'">
+            <span class="footer-icon material-symbols-rounded">calendar_month</span>
+            <small>캘린더</small>
+        </button>
+        <button class="footer-btn active">
+            <span class="footer-icon material-symbols-rounded">calendar_view_week</span>
+            <small>주간표</small>
+        </button>
+        <button class="footer-btn" onclick="window.location.href='/chatbot'">
+            <span class="footer-icon material-symbols-rounded">smart_toy</span>
+            <small>챗봇</small>
+        </button>
+        <button class="footer-btn" onclick="window.location.href='/desktop'">
+            <span class="footer-icon material-symbols-rounded">desktop_windows</span>
+            <small>PC버전</small>
+        </button>
+    </div>
+
+    <script>
+        let allSchedules = [];
+        let currentWeekStart = new Date();
+        
+        // 이번 주 일요일로 설정
+        currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay());
+        currentWeekStart.setHours(0, 0, 0, 0);
+
+        async function loadSchedules() {
+            try {
+                const response = await fetch('/mobile/schedule');
+                allSchedules = await response.json();
+                renderWeekly();
+            } catch (error) {
+                console.error('Error loading schedules:', error);
+            }
+        }
+
+        function changeWeek(delta) {
+            currentWeekStart.setDate(currentWeekStart.getDate() + (delta * 7));
+            renderWeekly();
+        }
+
+        function renderWeekly() {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+
+            document.getElementById('weekRange').textContent = 
+                `${formatDate(currentWeekStart)} ~ ${formatDate(weekEnd)}`;
+            document.getElementById('weekTitle').textContent = 
+                `${currentWeekStart.getFullYear()}년 ${currentWeekStart.getMonth() + 1}월`;
+
+            const content = document.getElementById('weeklyContent');
+            content.innerHTML = '';
+
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(currentWeekStart);
+                dayDate.setDate(dayDate.getDate() + i);
+                const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+
+                // 헤더
+                const header = document.createElement('div');
+                header.className = 'day-header';
+
+                const dayTitle = document.createElement('div');
+                dayTitle.className = 'day-title';
+                dayTitle.textContent = `${dayDate.getMonth() + 1}월 ${dayDate.getDate()}일 (${dayNames[i]})`;
+
+                header.appendChild(dayTitle);
+                dayCard.appendChild(header);
+
+                // 일정 목록
+                const eventsDiv = document.createElement('div');
+                eventsDiv.className = 'day-events';
+
+                const daySchedules = allSchedules.filter(schedule => {
+                    const scheduleStart = schedule.start_date.split(' ')[0];
+                    const scheduleEnd = schedule.end_date ? schedule.end_date.split(' ')[0] : scheduleStart;
+                    return dateStr >= scheduleStart && dateStr <= scheduleEnd;
+                });
+
+                if (daySchedules.length === 0) {
+                    const noEvents = document.createElement('div');
+                    noEvents.className = 'no-events';
+                    noEvents.textContent = '일정 없음';
+                    eventsDiv.appendChild(noEvents);
+                } else {
+                    daySchedules.forEach(schedule => {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'event-item';
+                        
+                        // 시간 (start_date에서 시간 부분 추출)
+                        const timeSpan = document.createElement('span');
+                        timeSpan.className = 'event-time';
+                        const dateTimeParts = schedule.start_date.split(' ');
+                        if (dateTimeParts.length > 1) {
+                            const timePart = dateTimeParts[1].substring(0, 5); // HH:MM만 추출
+                            timeSpan.textContent = timePart;
+                        } else {
+                            timeSpan.textContent = '';
+                        }
+                        
+                        // 제목
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = 'event-title';
+                        titleSpan.textContent = schedule.title;
+                        
+                        // schedule과 todo는 투명 배경, title과 detail은 커스텀 색상 적용
+                        const scheduleType = schedule.schedule_type || 'schedule';
+                        if (scheduleType === 'title' || scheduleType === 'detail') {
+                            eventDiv.style.background = schedule.color || '#5A9FD4';
+                            eventDiv.style.color = 'white';
+                        } else {
+                            eventDiv.style.background = 'transparent';
+                            eventDiv.style.color = '#333';
+                            eventDiv.style.border = '1px solid #ddd';
+                        }
+                        
+                        eventDiv.appendChild(timeSpan);
+                        eventDiv.appendChild(titleSpan);
+                        
+                        eventDiv.onclick = () => {
+                            window.location.href = `/mobile/edit/${schedule.id}`;
+                        };
+                        eventsDiv.appendChild(eventDiv);
+                    });
+                }
+
+                dayCard.appendChild(eventsDiv);
+                content.appendChild(dayCard);
+            }
+        }
+
+        function formatDate(date) {
+            return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        loadSchedules();
+    </script>
+</body>
+</html>

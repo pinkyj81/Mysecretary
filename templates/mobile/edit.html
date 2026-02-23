@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>일정 수정 - 나의 비서</title>
+    <title>일정 수정 - 시간정원</title>
     <style>
         * {
             margin: 0;
@@ -172,7 +172,7 @@
     <div class="form-container">
         <h1>✏️ 일정 수정</h1>
         
-        <div class="success-message" id="successMsg">✅ 일정이 수정되었습니다!</div>
+        <div class="success-message" id="successMsg">일정이 수정되었습니다!</div>
         <div class="error-message" id="errorMsg"></div>
 
         <form id="scheduleForm">
@@ -208,7 +208,7 @@
             <div class="form-group">
                 <div class="checkbox-group">
                     <input type="checkbox" id="isCompleted" name="isCompleted">
-                    <label for="isCompleted">✅ 완료됨</label>
+                    <label for="isCompleted">완료됨</label>
                 </div>
             </div>
 
@@ -217,7 +217,7 @@
                 <a href="{{ url_for('mobile_index') }}" class="btn btn-cancel">취소</a>
             </div>
 
-            <button type="button" class="btn btn-delete" onclick="deleteSchedule()">🗑️ 일정 삭제</button>
+            <button type="button" class="btn btn-delete" onclick="deleteSchedule()">일정 삭제</button>
         </form>
     </div>
 

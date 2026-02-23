@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Secretary - 데스크톱</title>
+    <title>시간정원 - 데스크톱</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0" />
     <style>
         * {
             margin: 0;
@@ -38,6 +39,9 @@
             font-size: 24px;
             font-weight: 500;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .header p {
@@ -66,6 +70,12 @@
 
         .btn-mobile:hover {
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            line-height: 1;
+            vertical-align: middle;
         }
 
         .controls {
@@ -792,25 +802,25 @@
     <div class="container">
         <div class="header">
             <div>
-                <h1>✨ My Secretary</h1>
+                <h1><span class="material-symbols-rounded">auto_awesome</span>시간정원</h1>
                 <p>데스크톱 화면</p>
             </div>
             <div class="header-actions">
-                <a href="{{ url_for('desktop_weekly_page') }}" class="btn-mobile">📅 주간 계획표</a>
-                <button onclick="openChatbotModal()" class="btn-mobile" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;">🤖 챗봇</button>
-                <a href="{{ url_for('mobile_index') }}" class="btn-mobile">📱 모바일 화면</a>
+                <a href="{{ url_for('desktop_weekly_page') }}" class="btn-mobile"><span class="material-symbols-rounded">calendar_view_week</span> 주간 계획표</a>
+                <button onclick="openChatbotModal()" class="btn-mobile" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">smart_toy</span> 챗봇</button>
+                <a href="{{ url_for('mobile_index') }}" class="btn-mobile"><span class="material-symbols-rounded">smartphone</span> 모바일 화면</a>
             </div>
         </div>
 
         <div class="controls">
-            <button onclick="openCreateModal()" class="btn-add">⊕ 새 일정</button>
+            <button onclick="openCreateModal()" class="btn-add"><span class="material-symbols-rounded">add_circle</span> 새 일정</button>
         </div>
 
         <div class="main-layout">
             <!-- Left Sidebar - Schedule List -->
             <div class="sidebar">
-                <input type="text" class="search-box" id="searchBox" placeholder="🔍 일정 검색...">
-                <div class="sidebar-title">📋 전체 일정</div>
+                <input type="text" class="search-box" id="searchBox" placeholder="일정 검색...">
+                <div class="sidebar-title"><span class="material-symbols-rounded">list_alt</span> 전체 일정</div>
                 <div class="schedule-list" id="scheduleListSidebar">
                     <!-- Populated by JavaScript -->
                 </div>
@@ -820,9 +830,9 @@
             <div class="calendar-section">
                 <div class="calendar-container">
                     <div class="calendar-header">
-                        <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀ 이전</button>
+                        <button class="calendar-nav-btn" onclick="changeMonth(-1)"><span class="material-symbols-rounded">chevron_left</span> 이전</button>
                         <h2 class="calendar-month-title" id="calendarTitle"></h2>
-                        <button class="calendar-nav-btn" onclick="changeMonth(1)">다음 ▶</button>
+                        <button class="calendar-nav-btn" onclick="changeMonth(1)">다음 <span class="material-symbols-rounded">chevron_right</span></button>
                     </div>
 
                     <div class="calendar-weekdays">
@@ -841,7 +851,7 @@
                 </div>
 
                 <div id="emptyState" class="empty-state" style="display: none;">
-                    <h3>📝 등록된 일정이 없습니다</h3>
+                    <h3>등록된 일정이 없습니다</h3>
                     <p>첫 일정을 추가해 시작해 보세요!</p>
                 </div>
             </div>
@@ -858,7 +868,7 @@
                     </span>
                     <span id="modalTitleText">일정 수정</span>
                 </h2>
-                <button class="modal-close" onclick="closeModal()">✕</button>
+                <button class="modal-close" onclick="closeModal()"><span class="material-symbols-rounded">close</span></button>
             </div>
             <div class="modal-body">
                 <form id="scheduleForm">
@@ -906,8 +916,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">취소</button>
-                <button type="button" class="btn btn-danger" id="btnDelete" onclick="deleteScheduleFromModal()" style="display: none;">🗑️ 삭제</button>
-                <button type="button" class="btn btn-primary" onclick="saveSchedule()">✓ 저장</button>
+                <button type="button" class="btn btn-danger" id="btnDelete" onclick="deleteScheduleFromModal()" style="display: none;"><span class="material-symbols-rounded">delete</span> 삭제</button>
+                <button type="button" class="btn btn-primary" onclick="saveSchedule()"><span class="material-symbols-rounded">check</span> 저장</button>
             </div>
         </div>
     </div>
@@ -916,12 +926,12 @@
     <div id="chatbotModal" class="modal chatbot-modal">
         <div class="chatbot-modal-content">
             <div class="chatbot-modal-header">
-                <h2 style="font-size: 18px; font-weight: 600;">🤖 AI 일정 비서</h2>
-                <button class="chatbot-modal-close" onclick="closeChatbotModal()">✕</button>
+                <h2 style="font-size: 18px; font-weight: 600;"><span class="material-symbols-rounded">smart_toy</span> AI 일정 비서</h2>
+                <button class="chatbot-modal-close" onclick="closeChatbotModal()"><span class="material-symbols-rounded">close</span></button>
             </div>
             <div class="chatbot-messages" id="chatMessagesContainer">
                 <div class="chat-welcome">
-                    <p><strong>안녕하세요! 😊</strong></p>
+                    <p><strong>안녕하세요!</strong></p>
                     <p style="font-size: 13px; color: #666; margin-top: 8px;">자연스러운 대화로 일정을 관리해보세요!</p>
                     <div style="margin-top: 12px; font-size: 12px; color: #999;">
                         <p>예: "내일 오후 3시 회의 추가해줘"</p>
