@@ -871,6 +871,29 @@
             text-overflow: ellipsis;
         }
 
+        .kids-card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .kids-delete-btn {
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #555;
+            border-radius: 6px;
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .kids-delete-btn:hover {
+            border-color: #ffb0b0;
+            color: #cc3b3b;
+        }
+
         .kids-empty-note {
             font-size: 13px;
             color: #666;
@@ -887,6 +910,8 @@
             </div>
             <div class="header-actions">
                 <a href="{{ url_for('desktop_weekly_page') }}" class="btn-mobile" title="주간 계획표" aria-label="주간 계획표"><span class="material-symbols-rounded">calendar_view_week</span></a>
+                <a href="{{ url_for('desktop_manage_page') }}" class="btn-mobile" title="일괄 수정" aria-label="일괄 수정"><span class="material-symbols-rounded">table_view</span></a>
+                <a href="{{ url_for('desktop_routine_check_page') }}" class="btn-mobile" title="my routine" aria-label="my routine"><span class="material-symbols-rounded">checklist</span></a>
                 <button onclick="openChatbotModal()" class="btn-mobile" title="챗봇" aria-label="챗봇" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">smart_toy</span></button>
                 <button onclick="openKidsMemoModal()" class="btn-mobile" title="메모" aria-label="메모" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">sticky_note_2</span></button>
                 <a href="{{ url_for('mobile_index') }}" class="btn-mobile" title="모바일 화면" aria-label="모바일 화면"><span class="material-symbols-rounded">smartphone</span></a>
@@ -971,6 +996,7 @@
                             <option value="title">제목</option>
                             <option value="todo">할 일</option>
                             <option value="schedule">일정</option>
+                            <option value="routine">루틴</option>
                         </select>
                     </div>
 
@@ -1080,7 +1106,10 @@
                             <a href="${file.url}" target="_blank" rel="noopener">
                                 <img class="kids-full-image" src="${file.url}" alt="kids schedule full">
                             </a>
-                            <div class="kids-card-name">${file.name}</div>
+                            <div class="kids-card-meta">
+                                <div class="kids-card-name">${file.name}</div>
+                                <button type="button" class="kids-delete-btn" onclick="deleteKidsSchedule('${file.name}')">삭제</button>
+                            </div>
                         </div>
                     `).join('');
                 }
@@ -1093,6 +1122,34 @@
 
         function closeKidsMemoModal() {
             document.getElementById('kidsMemoModal').classList.remove('show');
+        }
+
+        async function deleteKidsSchedule(filename) {
+            if (!filename) {
+                return;
+            }
+
+            if (!confirm(`파일을 삭제할까요?\n${filename}`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/kids/schedule/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    alert(result.message || '파일 삭제에 실패했습니다.');
+                    return;
+                }
+
+                await openKidsMemoModal();
+            } catch (error) {
+                alert('파일 삭제 중 오류가 발생했습니다.');
+            }
         }
 
         // Load schedules on page load

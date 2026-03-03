@@ -436,6 +436,104 @@
             vertical-align: middle;
         }
 
+        .kids-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 10px;
+        }
+
+        .kids-modal.show {
+            display: flex;
+        }
+
+        .kids-modal-content {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            padding: 14px;
+            max-height: 85vh;
+            overflow: hidden;
+        }
+
+        .kids-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .kids-modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kids-modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #333;
+        }
+
+        #kidsMemoBody {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .kids-full-image {
+            width: 100%;
+            max-height: 48vh;
+            object-fit: contain;
+            display: block;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .kids-card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .kids-card-name {
+            font-size: 12px;
+            padding: 8px 4px 0;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .kids-delete-btn {
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #555;
+            border-radius: 6px;
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .kids-empty-note {
+            font-size: 13px;
+            color: #666;
+            padding: 12px 4px;
+        }
+
         .mobile-fab .material-symbols-rounded {
             font-size: 32px;
         }
@@ -461,6 +559,7 @@
                 </div>
                 <div class="header-actions">
                     <button class="header-action-btn" onclick="window.location.href='/mobile/weekly'" title="주간일정표"><span class="material-symbols-rounded">calendar_view_week</span></button>
+                    <button class="header-action-btn" onclick="openKidsMemoModal()" title="아이들 스케줄표"><span class="material-symbols-rounded">sticky_note_2</span></button>
                     <button class="header-action-btn" onclick="window.location.href='/chatbot'" title="챗봇"><span class="material-symbols-rounded">smart_toy</span></button>
                 </div>
             </div>
@@ -521,10 +620,87 @@
         </button>
     </div>
 
+    <div class="kids-modal" id="kidsMemoModal" role="dialog" aria-modal="true" aria-labelledby="kidsMemoTitle">
+        <div class="kids-modal-content">
+            <div class="kids-modal-header">
+                <div class="kids-modal-title" id="kidsMemoTitle">
+                    <span class="material-symbols-rounded">sticky_note_2</span>
+                    아이들 스케줄표
+                </div>
+                <button class="kids-modal-close" onclick="closeKidsMemoModal()"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div id="kidsMemoBody"></div>
+        </div>
+    </div>
+
     <script>
         let allSchedules = [];
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
+
+        async function openKidsMemoModal() {
+            const modal = document.getElementById('kidsMemoModal');
+            const body = document.getElementById('kidsMemoBody');
+            body.innerHTML = '';
+
+            try {
+                const response = await fetch('/kids/schedule/list');
+                const data = await response.json();
+                const files = data.files || [];
+
+                if (!files.length) {
+                    body.innerHTML = '<div class="kids-empty-note">등록된 시간표가 없습니다.</div>';
+                } else {
+                    body.innerHTML = files.map(file => `
+                        <div style="margin-bottom: 14px;">
+                            <a href="${file.url}" target="_blank" rel="noopener">
+                                <img class="kids-full-image" src="${file.url}" alt="kids schedule">
+                            </a>
+                            <div class="kids-card-meta">
+                                <div class="kids-card-name">${file.name}</div>
+                                <button type="button" class="kids-delete-btn" onclick="deleteKidsSchedule('${file.name}')">삭제</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                body.innerHTML = '<div class="kids-empty-note">시간표를 불러오지 못했습니다.</div>';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeKidsMemoModal() {
+            document.getElementById('kidsMemoModal').classList.remove('show');
+        }
+
+        async function deleteKidsSchedule(filename) {
+            if (!filename) {
+                return;
+            }
+
+            if (!confirm(`파일을 삭제할까요?\n${filename}`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/kids/schedule/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    alert(result.message || '파일 삭제에 실패했습니다.');
+                    return;
+                }
+
+                await openKidsMemoModal();
+            } catch (error) {
+                alert('파일 삭제 중 오류가 발생했습니다.');
+            }
+        }
 
         async function loadSchedules() {
             try {
@@ -759,6 +935,12 @@
             allSchedules = await response.json();
             renderMobileCalendar();
         }, 30000);
+
+        document.getElementById('kidsMemoModal').addEventListener('click', (event) => {
+            if (event.target.id === 'kidsMemoModal') {
+                closeKidsMemoModal();
+            }
+        });
     </script>
 </body>
 </html>

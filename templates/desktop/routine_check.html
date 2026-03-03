@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시간정원 - my routine</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0" />
+    <style>
+        :root {
+            --bg: #f0f5ff;
+            --card: #ffffff;
+            --line: #d9e3f4;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --primary: #5A9FD4;
+            --primary-strong: #2E5AA8;
+            --done: #16a34a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background:
+                radial-gradient(circle at 0% 0%, #e6f2ff 0%, transparent 40%),
+                radial-gradient(circle at 100% 10%, #efe8ff 0%, transparent 35%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px 16px;
+            box-shadow: 0 12px 26px rgba(55, 84, 146, 0.12);
+            margin-bottom: 14px;
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #334155;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .summary-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 16px rgba(67, 99, 163, 0.08);
+        }
+
+        .summary-card:nth-child(1) {
+            background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%);
+        }
+
+        .summary-card:nth-child(2) {
+            background: linear-gradient(135deg, #ffffff 0%, #eefdf4 100%);
+        }
+
+        .summary-card:nth-child(3) {
+            background: linear-gradient(135deg, #ffffff 0%, #f3efff 100%);
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .week-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 16px rgba(67, 99, 163, 0.08);
+        }
+
+        .week-range {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .routine-panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            height: fit-content;
+            box-shadow: 0 8px 18px rgba(67, 99, 163, 0.1);
+        }
+
+        .panel-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .routine-form {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .routine-add-btn {
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .routine-form input[type="text"] {
+            width: 100%;
+            border: 1px solid #d5dfee;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        .weekday-boxes {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px;
+        }
+
+        .weekday-chip {
+            border: 1px solid #d5dfee;
+            border-radius: 8px;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: #fff;
+        }
+
+        .weekday-chip input {
+            display: none;
+        }
+
+        .weekday-chip.on {
+            border-color: #9fc0e4;
+            background: linear-gradient(135deg, #eaf5ff 0%, #dfefff 100%);
+            color: #1d5f95;
+        }
+
+        .routine-list {
+            display: grid;
+            gap: 8px;
+            max-height: 420px;
+            overflow: auto;
+            padding-right: 2px;
+        }
+
+        .routine-list.mobile {
+            max-height: none;
+        }
+
+        .routine-row {
+            border: 1px solid #e8edf5;
+            border-radius: 10px;
+            padding: 8px;
+            display: grid;
+            gap: 6px;
+            background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+        }
+
+        .routine-row input[type="text"] {
+            border: 1px solid #d7dfeb;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 13px;
+        }
+
+        .routine-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .routine-actions button {
+            border: 1px solid #d4dce9;
+            background: #fff;
+            border-radius: 7px;
+            font-size: 12px;
+            padding: 5px 8px;
+            cursor: pointer;
+        }
+
+        .routine-actions .save {
+            border-color: #a2c5e7;
+            color: #1f6eab;
+        }
+
+        .routine-actions .del {
+            border-color: #ffb9b9;
+            color: #cc3b3b;
+        }
+
+        .routine-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 1200;
+            padding: 12px;
+        }
+
+        .routine-manage-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 1100;
+            padding: 12px;
+        }
+
+        .routine-manage-modal.show {
+            display: flex;
+        }
+
+        .routine-manage-content {
+            width: min(520px, 100%);
+            max-height: 88vh;
+            overflow: auto;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .routine-modal.show {
+            display: flex;
+        }
+
+        .routine-modal-content {
+            width: min(460px, 100%);
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .routine-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .routine-modal-close {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .routine-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .day-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+            border: 1px solid #d7e3f7;
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 170px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 18px rgba(67, 99, 163, 0.08);
+        }
+
+        .day-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid #edf2f9;
+            padding-bottom: 6px;
+        }
+
+        .day-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .day-date {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .routine-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #e1e9f6;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 13px;
+            background: #f7fbff;
+        }
+
+        .routine-item.done {
+            border-color: #bfe6cc;
+            background: linear-gradient(135deg, #ecfff3 0%, #def9e8 100%);
+            color: #166534;
+        }
+
+        .routine-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--done);
+            cursor: pointer;
+        }
+
+        .routine-empty {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 6px;
+        }
+
+        .today {
+            border-color: #93bff0;
+            box-shadow: 0 0 0 2px rgba(90, 159, 212, 0.18) inset, 0 12px 22px rgba(90, 159, 212, 0.18);
+        }
+
+        @media (max-width: 1050px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            .grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .routine-list {
+                max-height: 240px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .wrap {
+                padding: 12px;
+            }
+            .topbar,
+            .summary-card,
+            .week-nav,
+            .routine-panel,
+            .day-card {
+                border-radius: 10px;
+            }
+            .title {
+                font-size: 18px;
+            }
+            .summary {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+            }
+            .summary-card {
+                padding: 10px;
+            }
+            .summary-label {
+                font-size: 11px;
+            }
+            .summary-value {
+                font-size: 16px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .day-card {
+                min-height: 120px;
+            }
+            .week-nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .week-range {
+                order: 3;
+                width: 100%;
+                text-align: center;
+            }
+            .week-nav > button:first-child {
+                order: 1;
+                flex: 1;
+                justify-content: flex-start;
+            }
+            .week-nav > button:last-child {
+                order: 2;
+                flex: 1;
+                justify-content: flex-end;
+            }
+            .week-nav > button:nth-of-type(2) {
+                order: 4;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <div class="title"><span class="material-symbols-rounded">checklist</span>my routine</div>
+            <div class="actions">
+                <button class="btn" onclick="openRoutineManageModal()" title="루틴 관리" aria-label="루틴 관리"><span class="material-symbols-rounded">edit_note</span></button>
+                <a class="btn" href="/desktop" title="달력으로" aria-label="달력으로"><span class="material-symbols-rounded">calendar_month</span></a>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card">
+                <div class="summary-label">오늘 루틴</div>
+                <div class="summary-value" id="todayCount">0개</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">오늘 완료</div>
+                <div class="summary-value" id="todayDone">0개</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">주간 완료율</div>
+                <div class="summary-value" id="weekRate">0%</div>
+            </div>
+        </div>
+
+        <div class="week-nav">
+            <button class="btn" onclick="changeWeek(-1)"><span class="material-symbols-rounded">chevron_left</span>이전 주</button>
+            <div class="week-range" id="weekRange"></div>
+            <button class="btn" onclick="goCurrentWeek()"><span class="material-symbols-rounded">today</span>이번 주</button>
+            <button class="btn" onclick="changeWeek(1)">다음 주<span class="material-symbols-rounded">chevron_right</span></button>
+        </div>
+
+        <div class="layout">
+            <div class="grid" id="weekGrid"></div>
+        </div>
+    </div>
+
+    <div class="routine-manage-modal" id="routineManageModal" role="dialog" aria-modal="true" aria-labelledby="routineManageTitle">
+        <div class="routine-manage-content">
+            <div class="routine-panel" style="padding:0;border:none;background:transparent;box-shadow:none;">
+                <div class="panel-title" id="routineManageTitle">
+                    <span>루틴 등록 / 수정</span>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn" onclick="seedDefaultRoutines()" style="padding:6px 8px;font-size:12px;">기본 루틴</button>
+                        <button class="routine-modal-close" onclick="closeRoutineManageModal()"><span class="material-symbols-rounded">close</span></button>
+                    </div>
+                </div>
+
+                <button class="btn routine-add-btn" onclick="openRoutineModal()"><span class="material-symbols-rounded">add</span>루틴 추가</button>
+
+                <div class="routine-list" id="routineList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="routine-modal" id="routineModal" role="dialog" aria-modal="true" aria-labelledby="routineModalTitle">
+        <div class="routine-modal-content">
+            <div class="routine-modal-head">
+                <span id="routineModalTitle">루틴 추가</span>
+                <button class="routine-modal-close" onclick="closeRoutineModal()"><span class="material-symbols-rounded">close</span></button>
+            </div>
+
+            <div class="routine-form">
+                <input type="text" id="newRoutineName" placeholder="루틴 이름 (예: 구몬)">
+                <div class="weekday-boxes" id="newRoutineWeekdays"></div>
+            </div>
+
+            <div class="routine-modal-actions">
+                <button class="btn" onclick="closeRoutineModal()">취소</button>
+                <button class="btn routine-add-btn" style="width:auto;margin:0;" onclick="createRoutine()"><span class="material-symbols-rounded">add</span>추가</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+        let currentWeekStart = getMonday(new Date());
+        let routines = [];
+        let completedMap = {};
+
+        function getMonday(date) {
+            const d = new Date(date);
+            const day = (d.getDay() + 6) % 7;
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - day);
+            return d;
+        }
+
+        function addDays(date, days) {
+            const d = new Date(date);
+            d.setDate(d.getDate() + days);
+            return d;
+        }
+
+        function formatYmd(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function parseWeekdays(value) {
+            if (Array.isArray(value)) {
+                return value.map(v => Number(v)).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);
+            }
+            if (typeof value !== 'string') {
+                return [];
+            }
+            return value.split(',').map(v => Number(v.trim())).filter(v => Number.isInteger(v) && v >= 0 && v <= 6);
+        }
+
+        function renderWeekdayBoxes(containerId, selected = []) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = dayLabels.map((label, idx) => {
+                const checked = selected.includes(idx);
+                return `
+                    <label class="weekday-chip ${checked ? 'on' : ''}">
+                        <input type="checkbox" value="${idx}" ${checked ? 'checked' : ''}>
+                        ${label}
+                    </label>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.weekday-chip').forEach(chip => {
+                const input = chip.querySelector('input');
+                input.addEventListener('change', () => {
+                    chip.classList.toggle('on', input.checked);
+                });
+            });
+        }
+
+        function collectWeekdays(containerElement) {
+            return Array.from(containerElement.querySelectorAll('input[type="checkbox"]'))
+                .filter(input => input.checked)
+                .map(input => Number(input.value))
+                .filter(v => Number.isInteger(v) && v >= 0 && v <= 6)
+                .sort((a, b) => a - b);
+        }
+
+        async function loadRoutineCheckData() {
+            const res = await fetch(`/api/routine-check?start=${formatYmd(currentWeekStart)}`);
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || '루틴 데이터 로드 실패');
+            }
+
+            routines = (data.routines || []).map(item => ({
+                ...item,
+                weekdays: parseWeekdays(item.weekdays)
+            }));
+            completedMap = data.completed_map || {};
+
+            renderRoutineList();
+            renderWeek();
+        }
+
+        function renderRoutineList() {
+            const list = document.getElementById('routineList');
+            if (!list) return;
+
+            if (!routines.length) {
+                list.innerHTML = '<div class="routine-empty">등록된 루틴이 없습니다.</div>';
+                return;
+            }
+
+            list.innerHTML = routines.map(item => `
+                <div class="routine-row" data-id="${item.id}">
+                    <input type="text" class="r-name" value="${escapeHtml(item.name || '')}">
+                    <div class="weekday-boxes r-weekdays" id="routineWeekdays-${item.id}"></div>
+                    <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" class="r-active" ${item.is_active ? 'checked' : ''}> 활성
+                    </label>
+                    <div class="routine-actions">
+                        <button class="save" onclick="saveRoutine(${item.id})">저장</button>
+                        <button class="del" onclick="removeRoutine(${item.id})">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+
+            routines.forEach(item => {
+                renderWeekdayBoxes(`routineWeekdays-${item.id}`, parseWeekdays(item.weekdays));
+            });
+        }
+
+        async function createRoutine() {
+            const nameInput = document.getElementById('newRoutineName');
+            const weekdaysBox = document.getElementById('newRoutineWeekdays');
+            const name = (nameInput.value || '').trim();
+            const weekdays = collectWeekdays(weekdaysBox);
+
+            if (!name) {
+                alert('루틴 이름을 입력하세요.');
+                return;
+            }
+
+            if (!weekdays.length) {
+                alert('요일을 하나 이상 선택하세요.');
+                return;
+            }
+
+            const res = await fetch('/api/routines', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, weekdays, is_active: true })
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.success) {
+                alert(data.message || '루틴 등록 실패');
+                return;
+            }
+
+            nameInput.value = '';
+            renderWeekdayBoxes('newRoutineWeekdays', []);
+            closeRoutineModal();
+            await loadRoutineCheckData();
+        }
+
+        function openRoutineModal() {
+            const modal = document.getElementById('routineModal');
+            modal.classList.add('show');
+            const input = document.getElementById('newRoutineName');
+            if (input) {
+                input.focus();
+            }
+        }
+
+        function closeRoutineModal() {
+            const modal = document.getElementById('routineModal');
+            modal.classList.remove('show');
+        }
+
+        function openRoutineManageModal() {
+            document.getElementById('routineManageModal').classList.add('show');
+        }
+
+        function closeRoutineManageModal() {
+            document.getElementById('routineManageModal').classList.remove('show');
+        }
+
+        async function saveRoutine(id) {
+            const row = document.querySelector(`.routine-row[data-id="${id}"]`);
+            if (!row) return;
+
+            const name = (row.querySelector('.r-name').value || '').trim();
+            const weekdays = collectWeekdays(row.querySelector('.r-weekdays'));
+            const is_active = row.querySelector('.r-active').checked;
+
+            if (!name) {
+                alert('루틴 이름을 입력하세요.');
+                return;
+            }
+
+            if (!weekdays.length) {
+                alert('요일을 하나 이상 선택하세요.');
+                return;
+            }
+
+            const res = await fetch(`/api/routines/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, weekdays, is_active })
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.success) {
+                alert(data.message || '루틴 저장 실패');
+                return;
+            }
+
+            await loadRoutineCheckData();
+        }
+
+        async function removeRoutine(id) {
+            if (!confirm('루틴을 삭제할까요?')) {
+                return;
+            }
+
+            const res = await fetch(`/api/routines/${id}`, { method: 'DELETE' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                alert(data.message || '루틴 삭제 실패');
+                return;
+            }
+
+            await loadRoutineCheckData();
+        }
+
+        async function seedDefaultRoutines() {
+            const defaults = [
+                { name: '주산', weekdays: [1, 3] },
+                { name: '구몬', weekdays: [0, 2, 4, 6] },
+                { name: '영어단어', weekdays: [0] }
+            ];
+
+            for (const item of defaults) {
+                const exists = routines.some(r => (r.name || '').trim() === item.name);
+                if (exists) continue;
+                await fetch('/api/routines', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: item.name, weekdays: item.weekdays, is_active: true })
+                });
+            }
+
+            await loadRoutineCheckData();
+        }
+
+        async function toggleRoutine(dateStr, routineId, checked) {
+            const res = await fetch('/api/routine-check/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: dateStr, routine_id: routineId, checked })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                alert(data.message || '체크 저장 실패');
+                return false;
+            }
+            return true;
+        }
+
+        function renderWeek() {
+            const weekEnd = addDays(currentWeekStart, 6);
+            document.getElementById('weekRange').textContent = `${formatYmd(currentWeekStart)} ~ ${formatYmd(weekEnd)}`;
+
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = '';
+
+            const today = formatYmd(new Date());
+            let weekTotal = 0;
+            let weekDone = 0;
+            let todayTotal = 0;
+            let todayDone = 0;
+
+            for (let i = 0; i < 7; i++) {
+                const date = addDays(currentWeekStart, i);
+                const dateStr = formatYmd(date);
+                const dayRoutines = routines.filter(item => item.is_active && parseWeekdays(item.weekdays).includes(i));
+
+                const card = document.createElement('div');
+                card.className = 'day-card';
+                if (dateStr === today) {
+                    card.classList.add('today');
+                }
+
+                const head = document.createElement('div');
+                head.className = 'day-head';
+                head.innerHTML = `<div class="day-name">${dayLabels[i]}</div><div class="day-date">${dateStr}</div>`;
+                card.appendChild(head);
+
+                if (!dayRoutines.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'routine-empty';
+                    empty.textContent = '루틴 없음';
+                    card.appendChild(empty);
+                }
+
+                dayRoutines.forEach(routine => {
+                    const rid = String(routine.id);
+                    const checked = Boolean(completedMap[dateStr] && completedMap[dateStr][rid]);
+                    const item = document.createElement('label');
+                    item.className = `routine-item ${checked ? 'done' : ''}`;
+                    item.innerHTML = `
+                        <input type="checkbox" ${checked ? 'checked' : ''}>
+                        <span>${routine.name}</span>
+                    `;
+
+                    const checkbox = item.querySelector('input');
+                    checkbox.addEventListener('change', async (e) => {
+                        const next = e.target.checked;
+                        const ok = await toggleRoutine(dateStr, routine.id, next);
+                        if (!ok) {
+                            e.target.checked = !next;
+                            return;
+                        }
+
+                        if (!completedMap[dateStr]) {
+                            completedMap[dateStr] = {};
+                        }
+                        completedMap[dateStr][rid] = next;
+                        renderWeek();
+                    });
+
+                    card.appendChild(item);
+
+                    weekTotal += 1;
+                    if (checked) {
+                        weekDone += 1;
+                    }
+
+                    if (dateStr === today) {
+                        todayTotal += 1;
+                        if (checked) {
+                            todayDone += 1;
+                        }
+                    }
+                });
+
+                grid.appendChild(card);
+            }
+
+            document.getElementById('todayCount').textContent = `${todayTotal}개`;
+            document.getElementById('todayDone').textContent = `${todayDone}개`;
+            const rate = weekTotal ? Math.round((weekDone / weekTotal) * 100) : 0;
+            document.getElementById('weekRate').textContent = `${rate}%`;
+        }
+
+        function changeWeek(delta) {
+            currentWeekStart = addDays(currentWeekStart, delta * 7);
+            loadRoutineCheckData();
+        }
+
+        function goCurrentWeek() {
+            currentWeekStart = getMonday(new Date());
+            loadRoutineCheckData();
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        renderWeekdayBoxes('newRoutineWeekdays', []);
+        loadRoutineCheckData();
+
+        document.getElementById('routineModal').addEventListener('click', (event) => {
+            if (event.target.id === 'routineModal') {
+                closeRoutineModal();
+            }
+        });
+
+        document.getElementById('routineManageModal').addEventListener('click', (event) => {
+            if (event.target.id === 'routineManageModal') {
+                closeRoutineManageModal();
+            }
+        });
+    </script>
+</body>
+</html>

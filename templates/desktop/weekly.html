@@ -800,6 +800,35 @@
             text-overflow: ellipsis;
         }
 
+        .kids-card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+        }
+
+        .kids-card-meta .kids-card-name {
+            padding: 0;
+            flex: 1;
+        }
+
+        .kids-delete-btn {
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #555;
+            border-radius: 6px;
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .kids-delete-btn:hover {
+            border-color: #ffb0b0;
+            color: #cc3b3b;
+        }
+
         .kids-full-image {
             width: 100%;
             max-height: 70vh;
@@ -901,6 +930,7 @@
                     <option value="title">제목</option>
                     <option value="todo">할 일</option>
                     <option value="schedule">일정</option>
+                    <option value="routine">루틴</option>
                 </select>
             </div>
 
@@ -1404,7 +1434,10 @@
                     <a href="${file.url}" target="_blank" rel="noopener">
                         <img src="${file.url}" alt="kids schedule">
                     </a>
-                    <div class="kids-card-name">${file.name}</div>
+                    <div class="kids-card-meta">
+                        <div class="kids-card-name">${file.name}</div>
+                        <button type="button" class="kids-delete-btn" onclick='deleteKidsScheduleFile(${JSON.stringify(file.name)})'>삭제</button>
+                    </div>
                 </div>
             `).join('');
         } catch (error) {
@@ -1480,6 +1513,34 @@
             await loadKidsScheduleGallery();
         } catch (error) {
             alert('업로드에 실패했습니다.');
+        }
+    }
+
+    async function deleteKidsScheduleFile(filename) {
+        if (!filename) {
+            return;
+        }
+
+        if (!confirm(`파일을 삭제할까요?\n${filename}`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/kids/schedule/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                alert(data.message || '삭제에 실패했습니다.');
+                return;
+            }
+
+            await loadKidsScheduleGallery();
+        } catch (error) {
+            alert('삭제 중 오류가 발생했습니다.');
         }
     }
 

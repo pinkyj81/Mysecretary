@@ -28,3 +28,34 @@ class Schedule(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+
+
+class Routine(db.Model):
+    __tablename__ = 'secretary_routine'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(100), nullable=False)
+    weekdays = db.Column(db.String(50), nullable=False, default='')
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        day_values = []
+        raw = (self.weekdays or '').strip()
+        if raw:
+            for token in raw.split(','):
+                token = token.strip()
+                if token.isdigit():
+                    value = int(token)
+                    if 0 <= value <= 6:
+                        day_values.append(value)
+
+        return {
+            'id': self.id,
+            'name': self.name,
+            'weekdays': sorted(set(day_values)),
+            'is_active': bool(self.is_active),
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+        }
