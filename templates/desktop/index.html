@@ -322,12 +322,16 @@
 
         .day-event.span-mid {
             border-radius: 0;
-            padding-left: 0;
-            padding-right: 0;
+            padding-left: 4px;
+            padding-right: 4px;
+            padding-top: 2px;
+            padding-bottom: 2px;
             text-align: center;
             letter-spacing: 1px;
             margin-left: -8px;
             margin-right: -8px;
+            min-height: 16px;
+            height: 16px;
         }
 
         .day-event.span-end {
@@ -483,6 +487,40 @@
         .form-group textarea {
             resize: vertical;
             min-height: 80px;
+        }
+
+        .description-link-preview {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #2E5AA8;
+            word-break: break-all;
+        }
+
+        .preset-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .preset-manage-link {
+            font-size: 12px;
+            color: #2E5AA8;
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #d9e6f7;
+            background: #f5f9ff;
+        }
+
+        .preset-manage-link:hover {
+            background: #eaf3ff;
+        }
+
+        .description-link-preview a {
+            color: #2E5AA8;
+            text-decoration: underline;
         }
 
         .checkbox-group {
@@ -911,7 +949,9 @@
             <div class="header-actions">
                 <a href="{{ url_for('desktop_weekly_page') }}" class="btn-mobile" title="주간 계획표" aria-label="주간 계획표"><span class="material-symbols-rounded">calendar_view_week</span></a>
                 <a href="{{ url_for('desktop_manage_page') }}" class="btn-mobile" title="일괄 수정" aria-label="일괄 수정"><span class="material-symbols-rounded">table_view</span></a>
+                <a href="{{ url_for('desktop_color_preset_page') }}" class="btn-mobile" title="색상 프리셋" aria-label="색상 프리셋"><span class="material-symbols-rounded">palette</span></a>
                 <a href="{{ url_for('desktop_routine_check_page') }}" class="btn-mobile" title="my routine" aria-label="my routine"><span class="material-symbols-rounded">checklist</span></a>
+                <a href="{{ url_for('logout') }}" class="btn-mobile" title="로그아웃" aria-label="로그아웃"><span class="material-symbols-rounded">logout</span></a>
                 <button onclick="openChatbotModal()" class="btn-mobile" title="챗봇" aria-label="챗봇" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">smart_toy</span></button>
                 <button onclick="openKidsMemoModal()" class="btn-mobile" title="메모" aria-label="메모" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">sticky_note_2</span></button>
                 <a href="{{ url_for('mobile_index') }}" class="btn-mobile" title="모바일 화면" aria-label="모바일 화면"><span class="material-symbols-rounded">smartphone</span></a>
@@ -988,6 +1028,7 @@
                     <div class="form-group">
                         <label for="scheduleDescription">설명</label>
                         <textarea id="scheduleDescription" placeholder="세부 내용을 입력하세요 (선택)"></textarea>
+                        <div id="scheduleDescriptionLink" class="description-link-preview" style="display: none;"></div>
                     </div>
 
                     <div class="form-group">
@@ -998,6 +1039,16 @@
                             <option value="schedule">일정</option>
                             <option value="routine">루틴</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scheduleColorPreset">색상 프리셋</label>
+                        <div class="preset-row">
+                            <select id="scheduleColorPreset">
+                                <option value="">직접 선택</option>
+                            </select>
+                            <a class="preset-manage-link" href="{{ url_for('desktop_color_preset_page') }}" target="_blank" rel="noopener">관리</a>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -1074,6 +1125,7 @@
 
     <script>
         let allSchedules = [];
+        let colorPresets = [];
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
 
@@ -1085,6 +1137,71 @@
             const icon = isEdit ? editTitleIconSvg : createTitleIconSvg;
             const text = isEdit ? '일정 수정' : '일정 생성';
             document.getElementById('modalTitle').innerHTML = `<span class="modal-title-icon" aria-hidden="true">${icon}</span><span id="modalTitleText">${text}</span>`;
+        }
+
+        async function loadColorPresets() {
+            try {
+                const response = await fetch('/api/color-presets');
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || '색상 프리셋을 불러오지 못했습니다.');
+                }
+
+                colorPresets = result.items || [];
+            } catch (error) {
+                colorPresets = [];
+            }
+
+            renderColorPresetOptions();
+        }
+
+        function renderColorPresetOptions(selectedPresetId = '') {
+            const select = document.getElementById('scheduleColorPreset');
+            if (!select) {
+                return;
+            }
+
+            const selectedValue = String(selectedPresetId || '');
+            const options = ['<option value="">직접 선택</option>'];
+            colorPresets.forEach((item) => {
+                const id = String(item.id);
+                const selected = id === selectedValue ? ' selected' : '';
+                options.push(`<option value="${id}"${selected}>${item.name} (${item.color})</option>`);
+            });
+            select.innerHTML = options.join('');
+        }
+
+        function findPresetByColor(color) {
+            const normalized = String(color || '').toUpperCase();
+            return colorPresets.find((item) => String(item.color || '').toUpperCase() === normalized);
+        }
+
+        function syncPresetSelectionByColor(color) {
+            const select = document.getElementById('scheduleColorPreset');
+            if (!select) {
+                return;
+            }
+            const match = findPresetByColor(color);
+            select.value = match ? String(match.id) : '';
+        }
+
+        function setInitialColorFromPreset() {
+            const colorInput = document.getElementById('scheduleColor');
+            if (!colorInput) {
+                return;
+            }
+
+            if (colorPresets.length > 0) {
+                colorInput.value = colorPresets[0].color || '#5A9FD4';
+            } else {
+                colorInput.value = '#5A9FD4';
+            }
+            syncPresetSelectionByColor(colorInput.value);
+        }
+
+        async function initPage() {
+            await loadColorPresets();
+            await loadSchedules();
         }
 
         // ======================= Kids Schedule Memo Modal =======================
@@ -1152,8 +1269,8 @@
             }
         }
 
-        // Load schedules on page load
-        loadSchedules();
+        // Load schedules and color presets on page load
+        initPage();
 
         async function loadSchedules() {
             try {
@@ -1342,6 +1459,30 @@
             `).join('');
         }
 
+        function extractFirstUrl(value) {
+            if (!value) return '';
+            const text = String(value).trim();
+            const match = text.match(/(https?:\/\/[^\s]+)|(www\.[^\s]+)/i);
+            if (!match) return '';
+            const raw = match[0];
+            return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+        }
+
+        function updateDescriptionLinkPreview(value) {
+            const linkBox = document.getElementById('scheduleDescriptionLink');
+            if (!linkBox) return;
+
+            const url = extractFirstUrl(value);
+            if (!url) {
+                linkBox.style.display = 'none';
+                linkBox.innerHTML = '';
+                return;
+            }
+
+            linkBox.style.display = 'block';
+            linkBox.innerHTML = `링크: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        }
+
         // Modal Functions
         function openModal() {
             document.getElementById('scheduleModal').classList.add('show');
@@ -1352,6 +1493,8 @@
             document.getElementById('scheduleForm').reset();
             document.getElementById('scheduleId').value = '';
             document.getElementById('btnDelete').style.display = 'none';
+            updateDescriptionLinkPreview('');
+            syncPresetSelectionByColor('');
         }
 
         function openCreateModal() {
@@ -1359,10 +1502,11 @@
             document.getElementById('scheduleId').value = '';
             document.getElementById('scheduleTitle').value = '';
             document.getElementById('scheduleDescription').value = '계획';
+            updateDescriptionLinkPreview('계획');
             document.getElementById('scheduleStartDate').value = '';
             document.getElementById('scheduleEndDate').value = '';
-            document.getElementById('scheduleType').value = 'schedule';
-            document.getElementById('scheduleColor').value = '#5A9FD4';
+            document.getElementById('scheduleType').value = 'title';
+            setInitialColorFromPreset();
             document.getElementById('scheduleCompleted').checked = false;
             document.getElementById('btnDelete').style.display = 'none';
             openModal();
@@ -1373,10 +1517,11 @@
             document.getElementById('scheduleId').value = '';
             document.getElementById('scheduleTitle').value = '';
             document.getElementById('scheduleDescription').value = '계획';
+            updateDescriptionLinkPreview('계획');
             document.getElementById('scheduleStartDate').value = date + 'T09:00';
             document.getElementById('scheduleEndDate').value = '';
-            document.getElementById('scheduleType').value = 'schedule';
-            document.getElementById('scheduleColor').value = '#5A9FD4';
+            document.getElementById('scheduleType').value = 'title';
+            setInitialColorFromPreset();
             document.getElementById('scheduleCompleted').checked = false;
             document.getElementById('btnDelete').style.display = 'none';
             openModal();
@@ -1391,8 +1536,10 @@
                 document.getElementById('scheduleId').value = schedule.id;
                 document.getElementById('scheduleTitle').value = schedule.title;
                 document.getElementById('scheduleDescription').value = schedule.description || '';
-                document.getElementById('scheduleType').value = schedule.schedule_type || 'schedule';
+                updateDescriptionLinkPreview(schedule.description || '');
+                document.getElementById('scheduleType').value = schedule.schedule_type || 'title';
                 document.getElementById('scheduleColor').value = schedule.color || '#5A9FD4';
+                syncPresetSelectionByColor(document.getElementById('scheduleColor').value);
                 
                 if (schedule.start_date) {
                     const startDate = new Date(schedule.start_date);
@@ -1470,12 +1617,43 @@
             }
         }
 
+        document.querySelector('#scheduleModal .modal-content')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        let scheduleModalMouseDownOnOverlay = false;
+        document.getElementById('scheduleModal').addEventListener('mousedown', function(e) {
+            scheduleModalMouseDownOnOverlay = e.target === this;
+        });
+
         document.getElementById('scheduleModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
+            const shouldClose = e.target === this && scheduleModalMouseDownOnOverlay;
+            scheduleModalMouseDownOnOverlay = false;
+            if (shouldClose) closeModal();
         });
 
         document.getElementById('searchBox').addEventListener('input', (e) => {
             renderSidebar();
+        });
+
+        document.getElementById('scheduleDescription').addEventListener('input', (e) => {
+            updateDescriptionLinkPreview(e.target.value || '');
+        });
+
+        document.getElementById('scheduleColorPreset').addEventListener('change', (e) => {
+            const selectedId = String(e.target.value || '');
+            if (!selectedId) {
+                return;
+            }
+
+            const selected = colorPresets.find((item) => String(item.id) === selectedId);
+            if (selected && selected.color) {
+                document.getElementById('scheduleColor').value = selected.color;
+            }
+        });
+
+        document.getElementById('scheduleColor').addEventListener('input', (e) => {
+            syncPresetSelectionByColor(e.target.value);
         });
 
         // Auto refresh

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>색상 프리셋 관리 - 시간정원</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0" />
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, #5A9FD4 0%, #2E5AA8 100%);
+            color: white;
+            padding: 18px 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar p {
+            margin: 3px 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+        }
+
+        .btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            line-height: 1;
+            vertical-align: middle;
+        }
+
+        .wrap {
+            max-width: 920px;
+            margin: 22px auto;
+            padding: 0 16px 30px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e6e8ef;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px;
+            border-bottom: 1px solid #edf0f6;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .create-row {
+            display: grid;
+            grid-template-columns: 1.6fr 120px 90px 120px;
+            gap: 8px;
+            padding: 14px 16px;
+            border-bottom: 1px solid #edf0f6;
+        }
+
+        .preset-row {
+            display: grid;
+            grid-template-columns: 1.6fr 120px 90px 110px 92px;
+            gap: 8px;
+            padding: 10px 16px;
+            border-bottom: 1px solid #f1f3f8;
+            align-items: center;
+        }
+
+        .preset-row:last-child { border-bottom: none; }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="color"] {
+            width: 100%;
+            border: 1px solid #d8dbe2;
+            border-radius: 7px;
+            padding: 8px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #333;
+        }
+
+        input[type="color"] {
+            height: 38px;
+            padding: 2px;
+        }
+
+        .mini-btn {
+            border: none;
+            border-radius: 7px;
+            padding: 8px 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .mini-btn.save { background: #2E5AA8; color: #fff; }
+        .mini-btn.add { background: #5A9FD4; color: #fff; }
+        .mini-btn.del { background: #e35d66; color: #fff; }
+
+        .swatch {
+            width: 100%;
+            height: 20px;
+            border-radius: 5px;
+            border: 1px solid #d6dae4;
+        }
+
+        .hint {
+            padding: 14px 16px 0;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .empty {
+            padding: 26px;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+        }
+
+        @media (max-width: 820px) {
+            .create-row,
+            .preset-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div>
+            <h1><span class="material-symbols-rounded">palette</span>색상 프리셋 관리</h1>
+            <p>개인일정/큰애일정 같은 고정 색상을 등록해 두고 일정 입력 시 바로 선택할 수 있습니다.</p>
+        </div>
+        <div class="top-actions">
+            <a class="btn" href="{{ url_for('desktop_weekly_page') }}" title="주간 계획표"><span class="material-symbols-rounded">calendar_view_week</span></a>
+            <a class="btn" href="{{ url_for('desktop_index') }}" title="월간 달력"><span class="material-symbols-rounded">calendar_month</span></a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="card">
+            <div class="card-header">프리셋 목록</div>
+            <div class="hint">정렬 숫자가 낮을수록 일정 입력 창에서 먼저 보입니다.</div>
+            <div class="create-row">
+                <input id="newPresetName" type="text" placeholder="예: 개인 일정, 큰애 일정">
+                <input id="newPresetColor" type="color" value="#F472B6">
+                <input id="newPresetOrder" type="number" min="0" step="1" value="0">
+                <button class="mini-btn add" onclick="createPreset()"><span class="material-symbols-rounded">add</span>추가</button>
+            </div>
+            <div id="presetList"></div>
+        </div>
+    </div>
+
+    <script>
+        let presets = [];
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function loadPresets() {
+            try {
+                const res = await fetch('/api/color-presets');
+                const result = await res.json();
+                if (!res.ok || !result.success) {
+                    throw new Error(result.message || '프리셋을 불러오지 못했습니다.');
+                }
+
+                presets = result.items || [];
+                renderPresetList();
+            } catch (error) {
+                document.getElementById('presetList').innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function renderPresetList() {
+            const list = document.getElementById('presetList');
+            if (!presets.length) {
+                list.innerHTML = '<div class="empty">등록된 프리셋이 없습니다.</div>';
+                return;
+            }
+
+            list.innerHTML = presets.map((item) => `
+                <div class="preset-row" data-id="${item.id}">
+                    <input type="text" value="${escapeHtml(item.name)}" data-field="name">
+                    <input type="color" value="${item.color || '#5A9FD4'}" data-field="color">
+                    <input type="number" min="0" step="1" value="${Number(item.sort_order || 0)}" data-field="sort_order">
+                    <button class="mini-btn save" onclick="updatePreset(${item.id})"><span class="material-symbols-rounded">check</span>저장</button>
+                    <button class="mini-btn del" onclick="deletePreset(${item.id})"><span class="material-symbols-rounded">delete</span>삭제</button>
+                </div>
+            `).join('');
+        }
+
+        async function createPreset() {
+            const name = (document.getElementById('newPresetName').value || '').trim();
+            const color = document.getElementById('newPresetColor').value;
+            const sort_order = Number(document.getElementById('newPresetOrder').value || 0);
+
+            if (!name) {
+                alert('프리셋 이름을 입력해 주세요.');
+                return;
+            }
+
+            const res = await fetch('/api/color-presets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color, sort_order })
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                alert(result.message || '프리셋 추가에 실패했습니다.');
+                return;
+            }
+
+            document.getElementById('newPresetName').value = '';
+            document.getElementById('newPresetOrder').value = String((presets.length || 0) + 1);
+            await loadPresets();
+        }
+
+        async function updatePreset(id) {
+            const row = document.querySelector(`.preset-row[data-id="${id}"]`);
+            if (!row) return;
+
+            const name = (row.querySelector('[data-field="name"]').value || '').trim();
+            const color = row.querySelector('[data-field="color"]').value;
+            const sort_order = Number(row.querySelector('[data-field="sort_order"]').value || 0);
+
+            if (!name) {
+                alert('프리셋 이름을 입력해 주세요.');
+                return;
+            }
+
+            const res = await fetch(`/api/color-presets/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, color, sort_order })
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                alert(result.message || '프리셋 저장에 실패했습니다.');
+                return;
+            }
+
+            await loadPresets();
+        }
+
+        async function deletePreset(id) {
+            if (!confirm('이 프리셋을 삭제할까요?')) {
+                return;
+            }
+
+            const res = await fetch(`/api/color-presets/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await res.json();
+            if (!res.ok || !result.success) {
+                alert(result.message || '프리셋 삭제에 실패했습니다.');
+                return;
+            }
+
+            await loadPresets();
+        }
+
+        loadPresets();
+    </script>
+</body>
+</html>

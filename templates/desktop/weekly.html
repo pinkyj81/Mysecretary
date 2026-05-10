@@ -425,6 +425,40 @@
             min-height: 90px;
         }
 
+        .description-link-preview {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #2E5AA8;
+            word-break: break-all;
+        }
+
+        .preset-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .preset-manage-link {
+            font-size: 12px;
+            color: #2E5AA8;
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #d9e6f7;
+            background: #f5f9ff;
+        }
+
+        .preset-manage-link:hover {
+            background: #eaf3ff;
+        }
+
+        .description-link-preview a {
+            color: #2E5AA8;
+            text-decoration: underline;
+        }
+
         .schedule-check {
             display: inline-flex;
             align-items: center;
@@ -855,9 +889,11 @@
         <div class="actions">
             <button class="btn" id="prevWeekBtn" title="이전 주" aria-label="이전 주"><span class="material-symbols-rounded">chevron_left</span></button>
             <button class="btn" id="nextWeekBtn" title="다음 주" aria-label="다음 주"><span class="material-symbols-rounded">chevron_right</span></button>
+            <a class="btn" href="{{ url_for('desktop_color_preset_page') }}" title="색상 프리셋" aria-label="색상 프리셋"><span class="material-symbols-rounded">palette</span></a>
             <button class="btn" onclick="openWeeklyChatbotModal()" title="챗봇" aria-label="챗봇" style="border: none; background: rgba(255, 255, 255, 0.2); cursor: pointer;"><span class="material-symbols-rounded">smart_toy</span></button>
             <button class="btn" onclick="openKidsScheduleModal()" title="시간표 등록" aria-label="시간표 등록"><span class="material-symbols-rounded">upload</span></button>
             <button class="btn" onclick="openKidsMemoModal()" title="메모" aria-label="메모"><span class="material-symbols-rounded">sticky_note_2</span></button>
+            <a class="btn" href="{{ url_for('logout') }}" title="로그아웃" aria-label="로그아웃"><span class="material-symbols-rounded">logout</span></a>
             <a class="btn" href="{{ url_for('desktop_index') }}" title="달력으로 돌아가기" aria-label="달력으로 돌아가기"><span class="material-symbols-rounded">calendar_month</span></a>
         </div>
     </div>
@@ -922,6 +958,7 @@
             <div class="schedule-field">
                 <label for="modalDescriptionInput">설명</label>
                 <textarea id="modalDescriptionInput"></textarea>
+                <div id="modalDescriptionLink" class="description-link-preview" style="display: none;"></div>
             </div>
 
             <div class="schedule-field">
@@ -932,6 +969,16 @@
                     <option value="schedule">일정</option>
                     <option value="routine">루틴</option>
                 </select>
+            </div>
+
+            <div class="schedule-field">
+                <label for="modalColorPresetInput">색상 프리셋</label>
+                <div class="preset-row">
+                    <select id="modalColorPresetInput">
+                        <option value="">직접 선택</option>
+                    </select>
+                    <a class="preset-manage-link" href="{{ url_for('desktop_color_preset_page') }}" target="_blank" rel="noopener">관리</a>
+                </div>
             </div>
 
             <div class="schedule-field">
@@ -998,15 +1045,18 @@
     let currentWeekStart = null;
     let dayDateMap = {};
     let editingScheduleId = null;
+    let colorPresets = [];
     const createTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
     const editTitleIconSvg = '<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg>';
 
     const scheduleModal = document.getElementById('scheduleModal');
+    const scheduleDialog = document.querySelector('#scheduleModal .schedule-dialog');
     const scheduleForm = document.getElementById('scheduleForm');
     const scheduleModalTitle = document.getElementById('scheduleModalTitle');
     const modalTitleInput = document.getElementById('modalTitleInput');
     const modalDescriptionInput = document.getElementById('modalDescriptionInput');
     const modalTypeInput = document.getElementById('modalTypeInput');
+    const modalColorPresetInput = document.getElementById('modalColorPresetInput');
     const modalColorInput = document.getElementById('modalColorInput');
     const modalStartInput = document.getElementById('modalStartInput');
     const modalEndInput = document.getElementById('modalEndInput');
@@ -1032,6 +1082,83 @@
         return normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
     }
 
+    async function loadColorPresets() {
+        try {
+            const response = await fetch('/api/color-presets');
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || '색상 프리셋을 불러오지 못했습니다.');
+            }
+
+            colorPresets = result.items || [];
+        } catch (error) {
+            colorPresets = [];
+        }
+
+        renderColorPresetOptions();
+    }
+
+    function renderColorPresetOptions(selectedPresetId = '') {
+        if (!modalColorPresetInput) {
+            return;
+        }
+
+        const selectedValue = String(selectedPresetId || '');
+        const options = ['<option value="">직접 선택</option>'];
+        colorPresets.forEach((item) => {
+            const id = String(item.id);
+            const selected = id === selectedValue ? ' selected' : '';
+            options.push(`<option value="${id}"${selected}>${item.name} (${item.color})</option>`);
+        });
+        modalColorPresetInput.innerHTML = options.join('');
+    }
+
+    function findPresetByColor(color) {
+        const normalized = String(color || '').toUpperCase();
+        return colorPresets.find((item) => String(item.color || '').toUpperCase() === normalized);
+    }
+
+    function syncWeeklyPresetSelectionByColor(color) {
+        if (!modalColorPresetInput) {
+            return;
+        }
+        const match = findPresetByColor(color);
+        modalColorPresetInput.value = match ? String(match.id) : '';
+    }
+
+    function setWeeklyInitialColorFromPreset() {
+        if (colorPresets.length > 0) {
+            modalColorInput.value = colorPresets[0].color || '#5A9FD4';
+        } else {
+            modalColorInput.value = '#5A9FD4';
+        }
+        syncWeeklyPresetSelectionByColor(modalColorInput.value);
+    }
+
+    function extractFirstUrl(value) {
+        if (!value) return '';
+        const text = String(value).trim();
+        const match = text.match(/(https?:\/\/[^\s]+)|(www\.[^\s]+)/i);
+        if (!match) return '';
+        const raw = match[0];
+        return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    }
+
+    function updateModalDescriptionLinkPreview(value) {
+        const linkBox = document.getElementById('modalDescriptionLink');
+        if (!linkBox) return;
+
+        const url = extractFirstUrl(value);
+        if (!url) {
+            linkBox.style.display = 'none';
+            linkBox.innerHTML = '';
+            return;
+        }
+
+        linkBox.style.display = 'block';
+        linkBox.innerHTML = `링크: <a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    }
+
     function openScheduleModal(mode, data) {
         editingScheduleId = mode === 'edit' ? data.id : null;
         setScheduleModalTitle(mode);
@@ -1039,8 +1166,13 @@
 
         modalTitleInput.value = data.title || '';
         modalDescriptionInput.value = data.description || '';
-        modalTypeInput.value = data.schedule_type || 'schedule';
+        updateModalDescriptionLinkPreview(data.description || '');
+        modalTypeInput.value = data.schedule_type || 'title';
         modalColorInput.value = data.color || '#5A9FD4';
+        if (!data.color) {
+            setWeeklyInitialColorFromPreset();
+        }
+        syncWeeklyPresetSelectionByColor(modalColorInput.value);
         modalStartInput.value = toDatetimeLocalValue(data.start_date);
         modalEndInput.value = toDatetimeLocalValue(data.end_date);
         modalCompletedInput.checked = Boolean(data.is_completed);
@@ -1053,8 +1185,9 @@
         scheduleModal.classList.remove('open');
         editingScheduleId = null;
         scheduleForm.reset();
-        modalTypeInput.value = 'schedule';
-        modalColorInput.value = '#5A9FD4';
+        modalTypeInput.value = 'title';
+        setWeeklyInitialColorFromPreset();
+        updateModalDescriptionLinkPreview('');
     }
 
     function addDays(dateStr, diff) {
@@ -1092,7 +1225,7 @@
         openScheduleModal('create', {
             title: '',
             description: '계획',
-            schedule_type: 'schedule',
+            schedule_type: 'title',
             start_date: `${date}T${hh}:00`,
             end_date: '',
             is_completed: false
@@ -1404,11 +1537,37 @@
     });
 
     scheduleForm.addEventListener('submit', saveScheduleFromModal);
+    modalDescriptionInput.addEventListener('input', (event) => {
+        updateModalDescriptionLinkPreview(event.target.value || '');
+    });
+    modalColorPresetInput?.addEventListener('change', (event) => {
+        const selectedId = String(event.target.value || '');
+        if (!selectedId) {
+            return;
+        }
+
+        const selected = colorPresets.find((item) => String(item.id) === selectedId);
+        if (selected && selected.color) {
+            modalColorInput.value = selected.color;
+        }
+    });
+    modalColorInput.addEventListener('input', (event) => {
+        syncWeeklyPresetSelectionByColor(event.target.value);
+    });
     modalCancelBtn.addEventListener('click', closeScheduleModal);
     scheduleModalClose.addEventListener('click', closeScheduleModal);
     modalDeleteBtn.addEventListener('click', deleteScheduleFromModal);
+    scheduleDialog?.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+    let scheduleModalMouseDownOnOverlay = false;
+    scheduleModal.addEventListener('mousedown', (event) => {
+        scheduleModalMouseDownOnOverlay = event.target === scheduleModal;
+    });
     scheduleModal.addEventListener('click', (event) => {
-        if (event.target === scheduleModal) {
+        const shouldClose = event.target === scheduleModal && scheduleModalMouseDownOnOverlay;
+        scheduleModalMouseDownOnOverlay = false;
+        if (shouldClose) {
             closeScheduleModal();
         }
     });
@@ -1556,9 +1715,14 @@
         }
     });
 
+    async function initWeeklyPage(start) {
+        await loadColorPresets();
+        await loadWeeklyPlan(start);
+    }
+
     const params = new URLSearchParams(window.location.search);
     const start = params.get('start');
-    loadWeeklyPlan(start);
+    initWeeklyPage(start);
 
     // ======================= Chatbot Modal =======================
     function openWeeklyChatbotModal() {
