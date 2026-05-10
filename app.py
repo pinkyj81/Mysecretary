@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from db_config import db, SQLALCHEMY_DATABASE_URI
-from models import Schedule, Routine
+from models import Schedule, Routine, User, ColorPreset
 from datetime import datetime, timedelta, time, date
 from dotenv import load_dotenv
 from sqlalchemy import inspect, text, and_, or_
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import re
 import os
 import calendar
 
 load_dotenv()
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mysecretary-dev-key')
 
 # 데이터베이스 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
@@ -21,15 +23,98 @@ db.init_app(app)
 
 SCHEDULE_TYPES = {'schedule', 'todo', 'detail', 'title', 'routine'}
 DEFAULT_SCHEDULE_COLOR = '#5A9FD4'
+DEFAULT_COLOR_PRESETS = [
+    {'name': '개인 일정', 'color': '#F472B6'},
+    {'name': '큰애 일정', 'color': '#1E3A8A'},
+    {'name': '작은애 일정', 'color': '#0EA5E9'},
+    {'name': '가족 일정', 'color': '#10B981'},
+]
 _schema_checked = False
 KIDS_SCHEDULE_FOLDER = os.path.join(app.root_path, 'static', 'kids_schedule')
 KIDS_SCHEDULE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+PUBLIC_ENDPOINTS = {'login_page', 'logout', 'static'}
 
 os.makedirs(KIDS_SCHEDULE_FOLDER, exist_ok=True)
 
 
 def is_allowed_kids_schedule_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in KIDS_SCHEDULE_EXTENSIONS
+
+
+def get_default_user() -> User:
+    username = 'admin'
+    password = '1234'
+
+    user = User.query.filter(User.username == username).first()
+    if user:
+        if not check_password_hash(user.password_hash, password):
+            user.password_hash = generate_password_hash(password)
+            db.session.commit()
+        return user
+
+    user = User(username=username, password_hash=generate_password_hash(password))
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def current_user_id() -> int | None:
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    try:
+        return int(user_id)
+    except Exception:
+        return None
+
+
+def get_my_schedule_or_404(schedule_id: int) -> Schedule:
+    user_id = current_user_id()
+    return (
+        Schedule.query
+        .filter(Schedule.id == schedule_id, Schedule.user_id == user_id)
+        .first_or_404()
+    )
+
+
+def get_my_routine_or_404(routine_id: int) -> Routine:
+    user_id = current_user_id()
+    return (
+        Routine.query
+        .filter(Routine.id == routine_id, Routine.user_id == user_id)
+        .first_or_404()
+    )
+
+
+def get_my_color_preset_or_404(preset_id: int) -> ColorPreset:
+    user_id = current_user_id()
+    return (
+        ColorPreset.query
+        .filter(ColorPreset.id == preset_id, ColorPreset.user_id == user_id)
+        .first_or_404()
+    )
+
+
+def ensure_user_color_presets(user_id: int | None) -> None:
+    if not user_id:
+        return
+
+    exists = (
+        ColorPreset.query
+        .filter(ColorPreset.user_id == user_id)
+        .first()
+    )
+    if exists:
+        return
+
+    for idx, item in enumerate(DEFAULT_COLOR_PRESETS):
+        db.session.add(ColorPreset(
+            user_id=user_id,
+            name=item['name'],
+            color=normalize_schedule_color(item['color']),
+            sort_order=idx,
+        ))
+    db.session.commit()
 
 
 def ensure_schedule_schema() -> None:
@@ -43,6 +128,13 @@ def ensure_schedule_schema() -> None:
         db.create_all()
     except Exception:
         pass
+
+    default_user = None
+    try:
+        default_user = get_default_user()
+        ensure_user_color_presets(default_user.id)
+    except Exception:
+        default_user = None
 
     has_table = False
     try:
@@ -70,6 +162,9 @@ def ensure_schedule_schema() -> None:
         if 'color' not in columns:
             db.session.execute(text(f"ALTER TABLE {table_ref} ADD [color] NVARCHAR(20) NULL"))
 
+        if 'user_id' not in columns:
+            db.session.execute(text(f"ALTER TABLE {table_ref} ADD [user_id] INT NULL"))
+
         db.session.execute(text(
             f"""
             UPDATE {table_ref}
@@ -96,6 +191,40 @@ def ensure_schedule_schema() -> None:
             WHERE [color] IS NULL OR LTRIM(RTRIM([color])) = ''
             """
         ), {'default_color': DEFAULT_SCHEDULE_COLOR})
+
+        if default_user is not None:
+            db.session.execute(text(
+                f"""
+                UPDATE {table_ref}
+                SET [user_id] = :user_id
+                WHERE [user_id] IS NULL
+                """
+            ), {'user_id': default_user.id})
+
+        routine_table_ref = None
+        routine_columns = set()
+        try:
+            routine_columns = {column['name'].lower() for column in inspector.get_columns('secretary_routine', schema='dbo')}
+            routine_table_ref = 'dbo.secretary_routine'
+        except Exception:
+            try:
+                routine_columns = {column['name'].lower() for column in inspector.get_columns('secretary_routine')}
+                routine_table_ref = 'secretary_routine'
+            except Exception:
+                routine_columns = set()
+                routine_table_ref = None
+
+        if routine_table_ref and 'user_id' not in routine_columns:
+            db.session.execute(text(f"ALTER TABLE {routine_table_ref} ADD [user_id] INT NULL"))
+
+        if routine_table_ref and default_user is not None:
+            db.session.execute(text(
+                f"""
+                UPDATE {routine_table_ref}
+                SET [user_id] = :user_id
+                WHERE [user_id] IS NULL
+                """
+            ), {'user_id': default_user.id})
 
         db.session.commit()
         _schema_checked = True
@@ -244,6 +373,12 @@ def schedule_to_payload(schedule: Schedule) -> dict:
     return payload
 
 
+def color_preset_to_payload(item: ColorPreset) -> dict:
+    payload = item.to_dict()
+    payload['name'] = recover_text(payload.get('name', ''))
+    return payload
+
+
 @app.before_request
 def ensure_schema_before_request():
     try:
@@ -252,9 +387,79 @@ def ensure_schema_before_request():
         app.logger.exception('Schema pre-check failed but request continues: %s', exc)
 
 
+@app.before_request
+def require_auth_before_request():
+    endpoint = request.endpoint or ''
+    if endpoint in PUBLIC_ENDPOINTS:
+        return None
+
+    if current_user_id() is not None:
+        return None
+
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': '로그인이 필요합니다.'}), 401
+
+    return redirect(url_for('login_page', next=request.path))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    next_url = request.args.get('next') or request.form.get('next') or '/desktop'
+    error = ''
+
+    if request.method == 'POST':
+        mode = (request.form.get('mode') or 'login').strip()
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+
+        if not username or not password:
+            error = '아이디와 비밀번호를 입력하세요.'
+        elif mode == 'register':
+            exists = User.query.filter(User.username == username).first()
+            if exists:
+                error = '이미 존재하는 아이디입니다.'
+            else:
+                try:
+                    user = User(username=username, password_hash=generate_password_hash(password))
+                    db.session.add(user)
+                    db.session.commit()
+                    try:
+                        ensure_user_color_presets(user.id)
+                    except Exception:
+                        db.session.rollback()
+                    session['user_id'] = user.id
+                    session['username'] = user.username
+                    return redirect(next_url)
+                except Exception:
+                    db.session.rollback()
+                    error = '회원가입 중 오류가 발생했습니다.'
+        else:
+            user = User.query.filter(User.username == username).first()
+            if not user or not check_password_hash(user.password_hash, password):
+                error = '로그인 정보가 올바르지 않습니다.'
+            else:
+                try:
+                    ensure_user_color_presets(user.id)
+                except Exception:
+                    db.session.rollback()
+                session['user_id'] = user.id
+                session['username'] = user.username
+                return redirect(next_url)
+
+    return render_template('login.html', next_url=next_url, error=error)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
+
 @app.route('/')
 def index():
     """홈 페이지 - 데스크톱 이동"""
+    if current_user_id() is None:
+        return redirect(url_for('login_page'))
     return redirect(url_for('desktop_index'))
 
 # ======================= DESKTOP 라우트 =======================
@@ -267,13 +472,19 @@ def desktop_index():
 @app.route('/desktop/schedule')
 def desktop_get_schedules():
     """데스크톱: 모든 일정 조회 (JSON)"""
-    schedules = Schedule.query.order_by(Schedule.start_date.asc()).all()
+    user_id = current_user_id()
+    schedules = (
+        Schedule.query
+        .filter(Schedule.user_id == user_id)
+        .order_by(Schedule.start_date.asc())
+        .all()
+    )
     return jsonify([schedule_to_payload(s) for s in schedules])
 
 @app.route('/desktop/schedule/<int:schedule_id>')
 def desktop_get_schedule(schedule_id):
     """데스크톱: 특정 일정 조회"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     return jsonify(schedule_to_payload(schedule))
 
 @app.route('/desktop/create')
@@ -291,6 +502,12 @@ def desktop_weekly_page():
 def desktop_manage_page():
     """데스크톱: 일정 일괄 수정 페이지"""
     return render_template('desktop/manage.html')
+
+
+@app.route('/desktop/color-presets')
+def desktop_color_preset_page():
+    """데스크톱: 색상 프리셋 관리 페이지"""
+    return render_template('desktop/color_presets.html')
 
 
 @app.route('/desktop/routine-check')
@@ -391,7 +608,7 @@ def kids_schedule_delete():
 @app.route('/desktop/edit/<int:schedule_id>')
 def desktop_edit_page(schedule_id):
     """데스크톱: 일정 수정 페이지"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     return render_template('desktop/edit.html', schedule=schedule)
 
 # ======================= MOBILE 라우트 =======================
@@ -404,13 +621,19 @@ def mobile_index():
 @app.route('/mobile/schedule')
 def mobile_get_schedules():
     """모바일: 모든 일정 조회 (JSON)"""
-    schedules = Schedule.query.order_by(Schedule.start_date.asc()).all()
+    user_id = current_user_id()
+    schedules = (
+        Schedule.query
+        .filter(Schedule.user_id == user_id)
+        .order_by(Schedule.start_date.asc())
+        .all()
+    )
     return jsonify([schedule_to_payload(s) for s in schedules])
 
 @app.route('/mobile/schedule/<int:schedule_id>')
 def mobile_get_schedule(schedule_id):
     """모바일: 특정 일정 조회"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     return jsonify(schedule_to_payload(schedule))
 
 @app.route('/mobile/create')
@@ -426,7 +649,7 @@ def mobile_weekly_page():
 @app.route('/mobile/edit/<int:schedule_id>')
 def mobile_edit_page(schedule_id):
     """모바일: 일정 수정 페이지"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     return render_template('mobile/edit.html', schedule=schedule)
 
 # ======================= CHATBOT 라우트 =======================
@@ -442,6 +665,7 @@ def chatbot_page():
 def create_schedule():
     """일정 생성"""
     data = request.get_json() or {}
+    user_id = current_user_id()
     
     try:
         start_date = datetime.fromisoformat(data['start_date'])
@@ -459,6 +683,7 @@ def create_schedule():
             schedule_type=schedule_type,
             description=serialize_description(clean_description, schedule_type),
             color=normalize_schedule_color(data.get('color')),
+            user_id=user_id,
             start_date=start_date,
             end_date=end_date,
             is_completed=False
@@ -475,7 +700,7 @@ def create_schedule():
 @app.route('/api/schedule/<int:schedule_id>', methods=['PUT'])
 def update_schedule(schedule_id):
     """일정 수정"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     data = request.get_json() or {}
     
     try:
@@ -509,7 +734,7 @@ def update_schedule(schedule_id):
 @app.route('/api/schedule/<int:schedule_id>', methods=['DELETE'])
 def delete_schedule(schedule_id):
     """일정 삭제"""
-    schedule = Schedule.query.get_or_404(schedule_id)
+    schedule = get_my_schedule_or_404(schedule_id)
     
     try:
         db.session.delete(schedule)
@@ -520,9 +745,123 @@ def delete_schedule(schedule_id):
         return jsonify({'success': False, 'message': str(e)}), 400
 
 
+@app.route('/api/color-presets', methods=['GET'])
+def get_color_presets():
+    user_id = current_user_id()
+
+    try:
+        ensure_user_color_presets(user_id)
+    except Exception:
+        db.session.rollback()
+
+    presets = (
+        ColorPreset.query
+        .filter(ColorPreset.user_id == user_id)
+        .order_by(ColorPreset.sort_order.asc(), ColorPreset.id.asc())
+        .all()
+    )
+
+    changed = False
+    for item in presets:
+        repaired = recover_text(item.name)
+        if repaired and repaired != item.name:
+            item.name = repaired
+            changed = True
+
+    if changed:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    return jsonify({
+        'success': True,
+        'items': [color_preset_to_payload(item) for item in presets]
+    })
+
+
+@app.route('/api/color-presets', methods=['POST'])
+def create_color_preset():
+    user_id = current_user_id()
+    data = request.get_json() or {}
+
+    name = recover_text(data.get('name', '')).strip()
+    color = normalize_schedule_color(data.get('color'))
+    sort_order = data.get('sort_order', 0)
+
+    try:
+        sort_order = int(sort_order)
+    except Exception:
+        sort_order = 0
+
+    if not name:
+        return jsonify({'success': False, 'message': '프리셋 이름을 입력해 주세요.'}), 400
+
+    try:
+        item = ColorPreset(
+            user_id=user_id,
+            name=name,
+            color=color,
+            sort_order=sort_order,
+        )
+        db.session.add(item)
+        db.session.commit()
+        return jsonify({'success': True, 'item': color_preset_to_payload(item)}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+
+@app.route('/api/color-presets/<int:preset_id>', methods=['PUT'])
+def update_color_preset(preset_id):
+    item = get_my_color_preset_or_404(preset_id)
+    data = request.get_json() or {}
+
+    name = recover_text(data.get('name', item.name)).strip()
+    color = normalize_schedule_color(data.get('color', item.color))
+    sort_order = data.get('sort_order', item.sort_order)
+
+    try:
+        sort_order = int(sort_order)
+    except Exception:
+        sort_order = int(item.sort_order or 0)
+
+    if not name:
+        return jsonify({'success': False, 'message': '프리셋 이름을 입력해 주세요.'}), 400
+
+    try:
+        item.name = name
+        item.color = color
+        item.sort_order = sort_order
+        db.session.commit()
+        return jsonify({'success': True, 'item': color_preset_to_payload(item)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+
+@app.route('/api/color-presets/<int:preset_id>', methods=['DELETE'])
+def delete_color_preset(preset_id):
+    item = get_my_color_preset_or_404(preset_id)
+
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True, 'message': '프리셋이 삭제되었습니다.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+
+
 @app.route('/api/routines', methods=['GET'])
 def get_routines():
-    routines = Routine.query.order_by(Routine.id.asc()).all()
+    user_id = current_user_id()
+    routines = (
+        Routine.query
+        .filter(Routine.user_id == user_id)
+        .order_by(Routine.id.asc())
+        .all()
+    )
     items = []
     for item in routines:
         payload = item.to_dict()
@@ -534,6 +873,7 @@ def get_routines():
 @app.route('/api/routines', methods=['POST'])
 def create_routine():
     data = request.get_json() or {}
+    user_id = current_user_id()
     name = recover_text(data.get('name', '')).strip()
     weekdays = parse_weekday_values(data.get('weekdays'))
     is_active = bool(data.get('is_active', True))
@@ -546,6 +886,7 @@ def create_routine():
 
     try:
         routine = Routine(
+            user_id=user_id,
             name=name,
             weekdays=to_weekdays_text(weekdays),
             is_active=is_active
@@ -560,7 +901,7 @@ def create_routine():
 
 @app.route('/api/routines/<int:routine_id>', methods=['PUT'])
 def update_routine(routine_id):
-    routine = Routine.query.get_or_404(routine_id)
+    routine = get_my_routine_or_404(routine_id)
     data = request.get_json() or {}
 
     name = recover_text(data.get('name', routine.name)).strip()
@@ -586,7 +927,7 @@ def update_routine(routine_id):
 
 @app.route('/api/routines/<int:routine_id>', methods=['DELETE'])
 def delete_routine(routine_id):
-    routine = Routine.query.get_or_404(routine_id)
+    routine = get_my_routine_or_404(routine_id)
     try:
         db.session.delete(routine)
         db.session.commit()
@@ -614,9 +955,16 @@ def get_routine_check_data():
     week_start_dt = datetime.combine(week_start, time.min)
     week_end_dt = datetime.combine(week_end, time.max)
 
-    routines = Routine.query.order_by(Routine.id.asc()).all()
+    user_id = current_user_id()
+    routines = (
+        Routine.query
+        .filter(Routine.user_id == user_id)
+        .order_by(Routine.id.asc())
+        .all()
+    )
     schedule_rows = (
         Schedule.query
+        .filter(Schedule.user_id == user_id)
         .filter(Schedule.schedule_type == 'routine')
         .filter(Schedule.start_date >= week_start_dt)
         .filter(Schedule.start_date <= week_end_dt)
@@ -652,6 +1000,7 @@ def get_routine_check_data():
 @app.route('/api/routine-check/toggle', methods=['POST'])
 def toggle_routine_check():
     data = request.get_json() or {}
+    user_id = current_user_id()
     try:
         routine_id = int(data.get('routine_id'))
     except Exception:
@@ -668,7 +1017,11 @@ def toggle_routine_check():
     except ValueError:
         return jsonify({'success': False, 'message': 'date 형식은 YYYY-MM-DD 입니다.'}), 400
 
-    routine = Routine.query.get(routine_id)
+    routine = (
+        Routine.query
+        .filter(Routine.id == routine_id, Routine.user_id == user_id)
+        .first()
+    )
     if not routine:
         return jsonify({'success': False, 'message': '루틴을 찾을 수 없습니다.'}), 404
 
@@ -680,6 +1033,7 @@ def toggle_routine_check():
 
     schedule = (
         Schedule.query
+        .filter(Schedule.user_id == user_id)
         .filter(Schedule.schedule_type == 'routine')
         .filter(Schedule.description == marker)
         .filter(Schedule.start_date >= day_start)
@@ -694,6 +1048,7 @@ def toggle_routine_check():
                 schedule_type='routine',
                 description=marker,
                 color=DEFAULT_SCHEDULE_COLOR,
+                user_id=user_id,
                 start_date=day_start,
                 end_date=None,
                 is_completed=checked
@@ -712,6 +1067,7 @@ def toggle_routine_check():
 @app.route('/api/weekly-plan')
 def weekly_plan_api():
     """주간 계획표 데이터 조회"""
+    user_id = current_user_id()
     start_param = (request.args.get('start') or '').strip()
     today = datetime.now().date()
 
@@ -729,6 +1085,7 @@ def weekly_plan_api():
 
     schedules = (
         Schedule.query
+        .filter(Schedule.user_id == user_id)
         .filter(
             or_(
                 and_(Schedule.start_date >= week_start, Schedule.start_date <= week_end),
@@ -826,6 +1183,7 @@ def weekly_plan_api():
 @app.route('/api/chat', methods=['POST'])
 def chat_api():
     """규칙 기반 챗봇 메시지 처리 및 일정 생성"""
+    user_id = current_user_id()
     data = request.get_json() or {}
     message = (data.get('message') or '').strip()
 
@@ -1089,6 +1447,7 @@ def chat_api():
 
             existing_templates = (
                 Schedule.query
+                .filter(Schedule.user_id == user_id)
                 .filter(Schedule.start_date >= week_start)
                 .filter(Schedule.start_date <= week_end)
                 .filter(Schedule.title.like('주간 계획 (%)'))
@@ -1108,6 +1467,7 @@ def chat_api():
                     title=f'주간 계획 ({label})',
                     schedule_type='schedule',
                     description='주간 계획 템플릿',
+                    user_id=user_id,
                     start_date=datetime.combine(day, time(hour=9, minute=0)),
                     end_date=None,
                     is_completed=False
@@ -1131,6 +1491,7 @@ def chat_api():
 
         schedules = (
             Schedule.query
+            .filter(Schedule.user_id == user_id)
             .filter(Schedule.start_date >= range_start)
             .filter(Schedule.start_date <= range_end)
             .order_by(Schedule.start_date.asc())
@@ -1170,6 +1531,7 @@ def chat_api():
             for target_dt in yearly_dates:
                 exists = (
                     Schedule.query
+                    .filter(Schedule.user_id == user_id)
                     .filter(Schedule.title == title)
                     .filter(Schedule.schedule_type == schedule_type)
                     .filter(Schedule.start_date == target_dt)
@@ -1183,6 +1545,7 @@ def chat_api():
                     title=title,
                     schedule_type=schedule_type,
                     description='',
+                    user_id=user_id,
                     start_date=target_dt,
                     end_date=None,
                     is_completed=False
@@ -1201,6 +1564,7 @@ def chat_api():
             title=title,
             schedule_type=schedule_type,
             description='',
+            user_id=user_id,
             start_date=start_date,
             end_date=None,
             is_completed=False
